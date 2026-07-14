@@ -64,6 +64,17 @@ export function formatErrorResponse(error: unknown): {
     }
   }
 
+  if (error instanceof SearxngResponseError) {
+    logError(`SearXNG response error (${error.statusCode}): ${error.message}`)
+    return {
+      content: [{
+        type: 'text',
+        text: `❌ Erro do SearXNG (HTTP ${error.statusCode ?? '?'}): ${error.message}`
+      }],
+      isError: true,
+    }
+  }
+
   if (error instanceof FetchError) {
     logError(`Fetch failed for ${error.url}: ${error.message}`)
     return {

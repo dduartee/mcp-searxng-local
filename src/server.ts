@@ -65,7 +65,7 @@ export function createServer(config: ServerConfig = {}): McpServer {
     },
     async () => ({
       contents: [{
-        uri: 'mcp-search-local://tools',
+        uri: 'mcp-searxng-local://tools',
         text: JSON.stringify(listToolMetadata(), null, 2),
         mimeType: 'application/json',
       }],

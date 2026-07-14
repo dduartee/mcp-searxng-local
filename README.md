@@ -1,75 +1,108 @@
 # mcp-searxng-local
 
-MCP server for local web search via [SearXNG](https://docs.searxng.org/) — zero API keys, zero cost, 100% local.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
+[![tests](https://img.shields.io/badge/tests-28%20passed-brightgreen)]()
 
-## Tools
+MCP server for web search via [SearXNG](https://docs.searxng.org/) — **zero API keys, zero cost, 100% local**.
 
-| Tool | Description |
-|------|-------------|
-| `web_search` | Web search via SearXNG metasearch with domain/engine/date filters, safe search, answers + infoboxes |
-| `web_search_advanced` | Advanced search with all filters — domains, ISO date ranges, engine selection |
-| `web_fetch` | Extract page content: `mode=text` (full page) or `mode=highlights` (relevant excerpts, ~98% smaller) |
+> Why not Exa? Costs money. Why not Brave? Requires API key. This: self-hosted, unlimited queries, your data never leaves your machine.
 
 ## Quick Start
 
 ```bash
-# 1. Start SearXNG
+git clone https://github.com/dduartee/mcp-searxng-local
+cd mcp-searxng-local
+npm install && npm run build
 docker compose up -d
-
-# 2. Verify SearXNG is responding
-curl "http://localhost:4000/search?q=test&format=json"
-
-# 3. Build and start the MCP server
-npm run build
-npm start
 ```
 
-## Setup with OpenCode
+Then add to your MCP client config (see [Setup](#setup)).
 
-Add to `opencode.json`:
+## Why mcp-searxng-local?
 
-```json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "mcp-searxng-local": {
-      "type": "local",
-      "command": ["node", "dist/index.js"],
-      "enabled": true,
-      "env": {
-        "SEARXNG_HOST": "localhost",
-        "SEARXNG_PORT": "4000"
-      }
-    }
-  }
-}
+| | Exa MCP | Brave MCP | **mcp-searxng-local** |
+|---|---------|-----------|----------------------|
+| API key | Required | Required | **None** |
+| Cost | Paid (limited free) | 2k/mo free | **Unlimited** |
+| Privacy | Cloud (USA) | Cloud | **100% local** |
+| Engines | Proprietary index | Brave only | **Google, DDG, Brave, Wikipedia, arXiv, Bing** |
+| Highlights | AI (paid) | No | **Keyword matching (free)** |
+| Cache | Server-side | No | **LRU local (5min TTL)** |
+
+## Tools
+
+### `web_search` / `web_search_advanced`
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `query` | string | *(required)* | Search query |
+| `count` | number | `10` | Results (1-50) |
+| `pageno` | number | `1` | Page number |
+| `categories` | enum | — | `general`, `news`, `images`, `files`, `video`, `music` |
+| `time_range` | enum | — | `day`, `month`, `year` |
+| `language` | string | — | `pt-BR`, `en-US`, etc. |
+| `includeDomains` | string[] | — | Only results from these domains |
+| `excludeDomains` | string[] | — | Exclude these domains |
+| `engines` | string | — | `google,duckduckgo,brave,wikipedia,arxiv,bing` |
+| `safesearch` | number | — | `0`=off, `1`=moderate, `2`=strict |
+| `startPublishedDate` | string | — | ISO date: `"2025-01-01"` (client-side filter) |
+| `endPublishedDate` | string | — | ISO date: `"2025-12-31"` (client-side filter) |
+
+Response includes: results + **direct answers**, **infoboxes**, **spelling suggestions**, **search suggestions**, and **unresponsive engine diagnostics**.
+
+### `web_fetch`
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `url` | string | *(required)* | Full URL |
+| `maxChars` | number | `5000` | Character limit (100-50000) |
+| `mode` | enum | `text` | `text` (full page) or `highlights` (relevant excerpts) |
+| `query` | string | — | Required for `highlights` mode |
+
+**Highlights tip:** Results are typically ~98% smaller than full page text. Use `mode=highlights` with the same query that led you to the URL.
+
+## Setup
+
+### OpenCode
+
+```bash
+# CLI (adds to global config)
+opencode mcp add mcp-searxng-local -- node /home/user/mcp-searxng-local/dist/index.js
 ```
 
-Then restart OpenCode.
+```jsonc
+// Project config: ./opencode.json (relative path)
+{ "mcp": { "mcp-searxng-local": { "type": "local", "command": ["node", "dist/index.js"] } } }
 
-## Setup with other MCP clients
+// Global config: ~/.config/opencode/opencode.json (absolute path)
+{ "mcp": { "mcp-searxng-local": { "type": "local", "command": ["node", "/home/user/mcp-searxng-local/dist/index.js"] } } }
+```
+
+### Claude Code
 
 ```json
-// Claude Code
 {
   "mcpServers": {
     "mcp-searxng-local": {
       "command": "node",
-      "args": ["dist/index.js"]
-    }
-  }
-}
-
-// Cursor (.cursor/mcp.json)
-{
-  "mcpServers": {
-    "mcp-searxng-local": {
-      "command": "node",
-      "args": ["dist/index.js"]
+      "args": ["/home/user/mcp-searxng-local/dist/index.js"],
+      "env": { "SEARXNG_HOST": "localhost", "SEARXNG_PORT": "4000" }
     }
   }
 }
 ```
+
+### Cursor
+
+```json
+// .cursor/mcp.json
+{ "mcpServers": { "mcp-searxng-local": { "command": "node", "args": ["/home/user/mcp-searxng-local/dist/index.js"] } } }
+```
+
+### VS Code · Windsurf · Zed · Codex · Antigravity
+
+See [Install Guide](docs/INSTALL.md) for all client configs.
 
 ## Configuration
 
@@ -77,70 +110,52 @@ Then restart OpenCode.
 |---------|---------|-------------|
 | `SEARXNG_HOST` | `localhost` | SearXNG host |
 | `SEARXNG_PORT` | `4000` | SearXNG port |
-| `SEARXNG_TIMEOUT` | `10000` | Request timeout (ms) |
-| `DEBUG` | `false` | Enable debug logging |
+| `SEARXNG_TIMEOUT` | `10000` | HTTP timeout (ms) |
+| `DEBUG` | `false` | Enable verbose logging |
 
-Prefix `MCP_SEARCH_LOCAL_` variants also supported.
+Also accepts `MCP_SEARCH_LOCAL_` prefix: `MCP_SEARCH_LOCAL_SEARXNG_HOST`, `MCP_SEARCH_LOCAL_SEARXNG_PORT`, `MCP_SEARCH_LOCAL_TIMEOUT`, `MCP_SEARCH_LOCAL_DEBUG`.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Tools don't appear | Path wrong or build missing | Run `npm run build`, verify `dist/index.js` exists |
+| `web_search` connection error | SearXNG not running | `docker compose up -d` |
+| `"Nenhum resultado encontrado"` with `engines=X` | Engine blocked/suspended | Check `## Engines indisponíveis` section in response; retry with different engine |
+| Highlights returns full page | Page has no paragraph breaks or all text matches query | Use `mode=text` with smaller `maxChars` |
+| `web_fetch` timeout (15s) | Page is slow or .js-heavy SPA | Reduce `maxChars`, try a different URL |
+
+## Testing
+
+```bash
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/index.js
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"web_search","arguments":{"query":"test"}}}' | node dist/index.js
+
+npm test             # 28 unit tests
+npm run inspector    # MCP Inspector UI
+```
+
+## Architecture
+
+```
+MCP Client (OpenCode, Claude Code, Cursor...)
+  │ stdio or Streamable HTTP
+  ▼
+mcp-searxng-local (Node.js + TypeScript)
+  │ HTTP + LRU cache + exponential backoff retry
+  ▼
+SearXNG (Docker) ← Google, DuckDuckGo, Brave, Wikipedia, arXiv, Bing
+```
 
 ## Documentation
 
 | Doc | Description |
 |-----|-------------|
-| [Architecture](docs/ARCHITECTURE.md) | Internal design, data flow, design decisions |
-| [Search Insights](docs/SEARCH_INSIGHTS.md) | What we learned about AI agent search patterns |
-| [Comparison](docs/COMPARISON.md) | vs Exa MCP, Brave MCP, SearXNG raw, Chrome DevTools |
-| [Examples](docs/EXAMPLES.md) | Real usage examples and agent workflows |
-
-## Testing
-
-```bash
-# CLI test (JSON-RPC via stdio)
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/index.js
-echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"web_search","arguments":{"query":"test"}}}' | node dist/index.js
-
-# Run unit tests (vitest, 56 tests)
-npm test
-
-# MCP Inspector
-npm run inspector
-```
-
-## Development
-
-```bash
-npm run dev        # tsx watch
-npm run build      # tsc
-npm run typecheck  # tsc --noEmit
-npm test           # vitest run
-npm run inspector  # MCP Inspector
-```
-
-## Streamable HTTP (alternative transport)
-
-```bash
-# Start HTTP server instead of stdio
-MCP_PORT=3000 node dist/http.js
-```
-
-Then configure your client to use `http://localhost:3000/mcp`.
-
-## Architecture
-
-```
-Cliente MCP (OpenCode, Claude Code, etc.)
-  │ stdio or Streamable HTTP
-  ▼
-mcp-searxng-local (Node.js / TypeScript)
-  │ HTTP + cache + retry
-  ▼
-SearXNG (Docker) ← Google, DuckDuckGo, Brave, Wikipedia, arXiv, Bing
-```
-
-## SearXNG Engines
-
-Enabled by default: Google, DuckDuckGo, Brave, Wikipedia, arXiv.
-
-Add or remove engines in `searxng/settings.yml` and restart: `docker compose restart searxng`.
+| [Install Guide](docs/INSTALL.md) | Project, global, and plugin-based setup |
+| [Examples](docs/EXAMPLES.md) | Real agent workflows and CLI usage |
+| [Architecture](docs/ARCHITECTURE.md) | Internal design, data flow, decisions |
+| [Search Insights](docs/SEARCH_INSIGHTS.md) | What AI agents actually need from search |
+| [Comparison](docs/COMPARISON.md) | vs Exa, Brave, SearXNG raw, Chrome DevTools |
 
 ## License
 

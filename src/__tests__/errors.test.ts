@@ -40,7 +40,8 @@ describe('formatErrorResponse', () => {
     const err = new SearxngResponseError('Forbidden', 403)
     const res = formatErrorResponse(err)
     expect(res.isError).toBe(true)
-    expect(res.content[0].text).toContain('Erro inesperado')
+    expect(res.content[0].text).toContain('Erro do SearXNG')
+    expect(res.content[0].text).toContain('403')
   })
 })
 

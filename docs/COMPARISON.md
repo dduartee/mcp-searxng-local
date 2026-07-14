@@ -9,7 +9,7 @@
 | **Privacidade** | Nuvem Exa (EUA) | 100% local (Docker) |
 | **Engines** | Index próprio proprietário | 150+ via SearXNG (Google, DDG, Brave, Wikipedia, arXiv, Bing...) |
 | **Rate limits** | Sim (tier-dependente) | Não (SearXNG é local) |
-| **Cache** | Server-side apenas | Dupla camada: Valkey + LRU local |
+| **Cache** | Server-side apenas | LRU local (100 entradas, 5min TTL) |
 | **Retry** | Não documentado | Exponential backoff + jitter |
 | **Tools** | `web_search_exa`, `web_fetch_exa`, `web_search_advanced_exa`, Agent | `web_search`, `web_search_advanced`, `web_fetch` |
 | **Highlights** | IA proprietária (embeddings) | Keyword matching (client-side) |

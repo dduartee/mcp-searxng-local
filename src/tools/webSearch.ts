@@ -16,7 +16,7 @@ const searchParams = {
   pageno: z.number()
     .int().min(1).default(1)
     .describe('Página de resultados (padrão 1)'),
-  categories: z.string()
+  categories: z.enum(['general', 'news', 'images', 'files', 'video', 'music'])
     .optional()
     .describe('Categoria: general, news, images, files, video, music'),
   time_range: z.enum(['day', 'month', 'year'])
@@ -53,7 +53,7 @@ function filterByDomains(url: string, include?: string[], exclude?: string[]): b
     if (include?.length && !include.some((d) => hostname.includes(d.replace(/^www\./, '')))) return false
     return true
   } catch {
-    return true
+    return include && include.length > 0 ? false : true
   }
 }
 

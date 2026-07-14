@@ -65,6 +65,9 @@ export function registerWebFetchTool(
           clearTimeout(timeoutId)
         }
       } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          return formatErrorResponse(new Error(`Timeout: a página demorou mais de ${fetchTimeout / 1000}s para responder`))
+        }
         return formatErrorResponse(err)
       }
     }

@@ -56,14 +56,13 @@ export interface WebSearchParams {
   engines?: string
   /** safe search: 0=off, 1=moderate, 2=strict */
   safesearch?: number
-}
-
-export interface WebSearchAdvancedParams extends WebSearchParams {
-  /** Data ISO: "2024-01-01" — resultados publicados após esta data */
+  /** Data ISO: "2024-01-01" — resultados publicados após esta data (client-side) */
   startPublishedDate?: string
-  /** Data ISO: "2024-12-31" — resultados publicados antes desta data */
+  /** Data ISO: "2024-12-31" — resultados publicados antes desta data (client-side) */
   endPublishedDate?: string
 }
+
+export interface WebSearchAdvancedParams extends WebSearchParams {}
 
 export interface WebFetchParams {
   url: string

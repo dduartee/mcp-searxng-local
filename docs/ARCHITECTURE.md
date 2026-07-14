@@ -58,12 +58,9 @@ stdio é o transporte mais compatível com clientes MCP. Não expõe porta, não
 
 `src/http.ts` existe como alternativa para acesso remoto, usando `StreamableHTTPServerTransport`.
 
-### Cache em duas camadas
+### Cache
 
-1. **SearXNG (Valkey):** cache server-side para consultas repetidas (~50ms vs 2-5s)
-2. **Memória (LRU + TTL):** cache client-side no MCP server, 100 entradas, 5 min TTL
-
-Isso evita chamadas redundantes quando o agente refaz a mesma query.
+O MCP server mantém um cache LRU em memória (100 entradas, 5 min TTL) para evitar chamadas redundantes ao SearXNG quando o agente repete a mesma query. O SearXNG também usa Valkey internamente para cache de engines.
 
 ### Retry com exponential backoff
 
@@ -82,9 +79,8 @@ Toda resposta é formatada como markdown. O LLM consome markdown nativamente e e
 
 ## Testes
 
-56 testes unitários com vitest cobrindo:
+28 testes unitários com vitest cobrindo:
 - `formatter.test.ts` — highlights, full response, domain filtering
 - `errors.test.ts` — classes de erro, formatador MCP
 - `retry.test.ts` — comportamento de retry e fallback
 - `logger.test.ts` — debug on/off
-- `cache.test.ts` — LRU eviction, TTL expiry
