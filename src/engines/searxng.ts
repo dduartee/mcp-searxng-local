@@ -23,9 +23,13 @@ import { MemoryCache } from '../utils/cache.js'
 export function createSearxngClient(config: ServerConfig) {
   const baseURL = `http://${config.searxngHost || 'localhost'}:${config.searxngPort || 4000}`
   const timeout = config.searxngTimeout || 10000
+  const fallbackUrls = config.searxngFallbackUrls || []
   const cache = new MemoryCache<SearxngResponse>(100)
 
   log(`SearXNG client configured: ${baseURL}, timeout: ${timeout}ms`)
+  if (fallbackUrls.length > 0) {
+    log(`Fallback instances: ${fallbackUrls.join(', ')}`)
+  }
 
   function cacheKey(params: SearxngSearchParams): string {
     return [
@@ -112,6 +116,46 @@ export function createSearxngClient(config: ServerConfig) {
         maxRetries: 3,
         baseDelayMs: 500,
       })
+
+      // If local instance returned 0 results with all engines failing, try fallbacks
+      if (result.results.length === 0 && result.unresponsive_engines.length > 0 && fallbackUrls.length > 0) {
+        log(`Local instance: all engines failed (${result.unresponsive_engines.length} unresponsive). Trying fallbacks...`)
+        for (const fallbackUrl of fallbackUrls) {
+          try {
+            log(`Trying fallback: ${fallbackUrl}`)
+            const fallbackResult = await withRetry(
+              () => axios.get<SearxngResponse>(`${fallbackUrl}/search`, {
+                params: {
+                  q: params.q,
+                  format: 'json',
+                  categories: params.categories,
+                  language: params.language,
+                  pageno: params.pageno,
+                  time_range: params.time_range,
+                  safesearch: params.safesearch,
+                  engines: params.engines,
+                },
+                timeout,
+                signal,
+                validateStatus: () => true,
+              }).then((r) => {
+                if (r.status !== 200) throw new SearxngResponseError(`Fallback returned ${r.status}`, r.status)
+                return r.data
+              }),
+              { maxRetries: 2, baseDelayMs: 1000 }
+            )
+            if (fallbackResult.results.length > 0) {
+              log(`Fallback ${fallbackUrl} returned ${fallbackResult.results.length} results`)
+              cache.set(key, fallbackResult, 5 * 60 * 1000)
+              return fallbackResult
+            }
+          } catch (fbErr) {
+            log(`Fallback ${fallbackUrl} failed: ${fbErr instanceof Error ? fbErr.message : fbErr}`)
+          }
+        }
+        log('All fallback instances failed too')
+      }
+
       cache.set(key, result, 5 * 60 * 1000) // 5 min TTL
       return result
     } catch (err) {

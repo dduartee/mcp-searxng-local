@@ -127,6 +127,7 @@ See [Install Guide](docs/INSTALL.md) for all client configs.
 | `SEARXNG_HOST` | `localhost` | SearXNG host |
 | `SEARXNG_PORT` | `4000` | SearXNG port |
 | `SEARXNG_TIMEOUT` | `10000` | HTTP timeout (ms) |
+| `SEARXNG_FALLBACK_URLS` | — | Comma-separated public SearXNG URLs (auto-fallback when local engines fail) |
 | `DEBUG` | `false` | Enable verbose logging |
 
 Also accepts `MCP_SEARCH_LOCAL_` prefix: `MCP_SEARCH_LOCAL_SEARXNG_HOST`, `MCP_SEARCH_LOCAL_SEARXNG_PORT`, `MCP_SEARCH_LOCAL_TIMEOUT`, `MCP_SEARCH_LOCAL_DEBUG`.
@@ -138,6 +139,7 @@ Also accepts `MCP_SEARCH_LOCAL_` prefix: `MCP_SEARCH_LOCAL_SEARXNG_HOST`, `MCP_S
 | Tools don't appear | Path wrong or build missing | Run `npm run build`, verify `dist/index.js` exists |
 | `web_search` connection error | SearXNG not running | `docker compose up -d` |
 | `"Nenhum resultado encontrado"` with `engines=X` | Engine blocked/suspended | Check `## Engines indisponíveis` section in response; retry with different engine |
+| All engines return 0 results | Server IP blocked by search providers | Set `SEARXNG_FALLBACK_URLS` to public instances (e.g. `https://search.rhscz.eu,https://searx.tiekoetter.com`) — auto-fallback kicks in |
 | Highlights returns full page | Page has no paragraph breaks or all text matches query | Use `mode=text` with smaller `maxChars` |
 | `web_fetch` timeout (15s) | Page is slow or .js-heavy SPA | Reduce `maxChars`, try a different URL |
 

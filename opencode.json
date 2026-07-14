@@ -7,7 +7,8 @@
       "enabled": true,
       "env": {
         "SEARXNG_HOST": "localhost",
-        "SEARXNG_PORT": "4000"
+        "SEARXNG_PORT": "4000",
+        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
       }
     }
   }

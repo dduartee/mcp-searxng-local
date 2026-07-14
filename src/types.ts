@@ -84,5 +84,7 @@ export interface ServerConfig {
   searxngPort?: number
   searxngHost?: string
   searxngTimeout?: number
+  /** Fallback SearXNG instance URLs, tried when local instance returns 0 results */
+  searxngFallbackUrls?: string[]
   debug?: boolean
 }

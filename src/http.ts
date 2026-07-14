@@ -28,6 +28,13 @@ import { randomUUID } from 'node:crypto'
 import { warn } from './utils/logger.js'
 import { checkSearxngHealth } from './server.js'
 
+function parseFallbackUrls(): string[] | undefined {
+  const raw = process.env.SEARXNG_FALLBACK_URLS
+    || process.env.MCP_SEARCH_LOCAL_FALLBACK_URLS
+  if (!raw) return undefined
+  return raw.split(',').map((u) => u.trim()).filter((u) => u.length > 0)
+}
+
 function loadConfigFromEnv(): ServerConfig {
   return {
     searxngHost: process.env.SEARXNG_HOST
@@ -45,6 +52,7 @@ function loadConfigFromEnv(): ServerConfig {
         || '10000',
       10
     ),
+    searxngFallbackUrls: parseFallbackUrls(),
     debug: process.env.DEBUG === 'true'
       || process.env.MCP_SEARCH_LOCAL_DEBUG === 'true',
   }
