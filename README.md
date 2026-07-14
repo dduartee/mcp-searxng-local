@@ -8,6 +8,11 @@ MCP server for web search via [SearXNG](https://docs.searxng.org/) — **zero AP
 
 > Why not Exa? Costs money. Why not Brave? Requires API key. This: self-hosted, unlimited queries, your data never leaves your machine.
 
+## Prerequisites
+
+- [Node.js](https://nodejs.org) >= 20
+- [Docker](https://docs.docker.com/get-docker/) + Docker Compose v2
+
 ## Quick Start
 
 ```bash
@@ -15,9 +20,18 @@ git clone https://github.com/dduartee/mcp-searxng-local
 cd mcp-searxng-local
 npm install && npm run build
 docker compose up -d
+
+# Verify SearXNG is responding
+curl -s "http://localhost:4000/search?q=test&format=json" | python3 -c "import sys,json; print(len(json.load(sys.stdin).get('results',[])), 'results')"
+
+# Verify MCP server works
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/index.js
+# Expected: {"jsonrpc":"2.0","id":1,"result":{"tools":[...]}}
 ```
 
-Then add to your MCP client config (see [Setup](#setup)).
+Then add to your MCP client config below. **Restart your client** for the tools to appear.
+
+> Path note: replace `/home/user/mcp-searxng-local` in examples below with your actual clone path.
 
 ## Why mcp-searxng-local?
 
@@ -26,7 +40,7 @@ Then add to your MCP client config (see [Setup](#setup)).
 | API key | Required | Required | **None** |
 | Cost | Paid (limited free) | 2k/mo free | **Unlimited** |
 | Privacy | Cloud (USA) | Cloud | **100% local** |
-| Engines | Proprietary index | Brave only | **Google, DDG, Brave, Wikipedia, arXiv, Bing** |
+| Engines | Proprietary index | Brave only | **Google, DDG, Brave, Wikipedia, arXiv** |
 | Highlights | AI (paid) | No | **Keyword matching (free)** |
 | Cache | Server-side | No | **LRU local (5min TTL)** |
 
@@ -63,6 +77,8 @@ Response includes: results + **direct answers**, **infoboxes**, **spelling sugge
 **Highlights tip:** Results are typically ~98% smaller than full page text. Use `mode=highlights` with the same query that led you to the URL.
 
 ## Setup
+
+After adding the config, **restart your MCP client** for the tools to appear.
 
 ### OpenCode
 
