@@ -1,0 +1,62 @@
+# settings.yml do SearXNG
+# Configuração mínima para funcionar como backend do MCP server
+# O formato JSON PRECISA estar habilitado para o MCP conseguir ler os resultados
+
+# Herda defaults do SearXNG (evita erros de chaves faltando)
+use_default_settings: true
+
+general:
+  instance_name: "mcp-search-local"
+  debug: false
+  privacidade:
+    store_json_result: false
+
+search:
+  formats:
+    - html
+    - json
+
+server:
+  # Bind em 0.0.0.0 para o Docker conseguir receber conexões
+  bind_address: "0.0.0.0"
+  # Porta interna (o docker-compose mapeia 8080 -> 4000)
+  port: 8080
+  # Timeout para consultar engines externos
+  method: "GET"
+  # Não requer login
+  secret_key: "change-me-in-production"
+
+ui:
+  static_use_hash: true
+
+# Engines ativos — você pode desativar alguns para reduzir latência
+# Quanto mais engines, mais lenta a resposta (mas mais resultados)
+engines:
+  # Google é o engine mais importante (melhores resultados)
+  - name: google
+    shortcut: g
+    disabled: false
+
+  # DuckDuckGo como fallback primário (não precisa de API key)
+  - name: duckduckgo
+    shortcut: d
+    disabled: false
+
+  # Brave Search (gratuito, resultados decentes)
+  - name: brave
+    shortcut: b
+    disabled: false
+
+  # Wikipedia para resultados enciclopédicos
+  - name: wikipedia
+    shortcut: wp
+    disabled: false
+
+  # arXiv para papers acadêmicos
+  - name: arxiv
+    shortcut: ar
+    disabled: false
+
+# Cache via Valkey (reduz latência em consultas repetidas)
+redis:
+  url: "redis://valkey:6379/0"

@@ -1,0 +1,38 @@
+# docker-compose.yml
+# Configura o SearXNG (metasearch engine) + Valkey (cache)
+# O MCP server consulta o SearXNG via API HTTP em localhost:4000
+# O SearXNG por sua vez consulta Google, DuckDuckGo, Brave, etc.
+
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng-core
+    ports:
+      # Expõe a API do SearXNG na porta 4000 do host
+      # O MCP server fará requisições para http://localhost:4000/search
+      - "4000:8080"
+    volumes:
+      # Monta a configuração customizada do SearXNG
+      - ./searxng/settings.yml:/etc/searxng/settings.yml:ro
+      # Persiste cache de favicons entre restart
+      - searxng-data:/var/cache/searxng
+    environment:
+      # Desliga o modo debug em produção
+      - SEARXNG_DEBUG=false
+    restart: unless-stopped
+    depends_on:
+      valkey:
+        condition: service_started
+
+  valkey:
+    # Valkey é o cache do SearXNG (fork do Redis)
+    # Reduz latência em consultas repetidas
+    image: valkey/valkey:8
+    container_name: searxng-valkey
+    volumes:
+      - valkey-data:/data
+    restart: unless-stopped
+
+volumes:
+  searxng-data:
+  valkey-data:
