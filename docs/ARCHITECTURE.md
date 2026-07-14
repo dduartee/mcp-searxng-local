@@ -17,8 +17,10 @@ src/tools/webSearch.ts ──────────────── validate
   ▼
 src/engines/searxng.ts ──────────────── HTTP → SearXNG API
   │ cache (5min TTL) + retry (3x, exp backoff)
+  │ if all engines unresponsive → fallback to public instances
   ▼
 SearXNG (Docker, port 4000) ────────── metasearch: Google, DDG, Brave...
+  │ or → Public SearXNG instances (rate limit fallback)
   │ JSON response { results, answers, infoboxes, suggestions }
   ▼
 src/utils/formatter.ts ──────────────── formatted markdown for the LLM
@@ -40,7 +42,7 @@ src/
 │   ├── webSearch.ts        # web_search + web_search_advanced (unified handler)
 │   └── webFetch.ts         # web_fetch (text + highlights)
 ├── engines/
-│   ├── searxng.ts          # SearXNG HTTP client (cache + retry)
+│   ├── searxng.ts          # SearXNG HTTP client (cache + retry + auto-fallback)
 │   └── fetchHtml.ts        # Fetch + cheerio (HTML → clean text)
 └── utils/
     ├── formatter.ts        # Markdown formatting + extractHighlights
@@ -72,6 +74,22 @@ Connections to SearXNG and page fetches use `withRetry()` with:
 ### Zod for validation
 
 We use Zod v3 (compatible with MCP SDK v1). Schemas are described with `.describe()` — the LLM reads these descriptions to understand when and how to use each parameter.
+
+### Rate limit handling & auto-fallback
+
+Search engines frequently block server IPs with CAPTCHAs or rate limits. The server handles this transparently:
+
+1. Queries local SearXNG with configured engines (google, duckduckgo, brave, wikipedia, arxiv)
+2. If **all engines return 0 results** and are marked `unresponsive`, triggers fallback
+3. Iterates through `SEARXNG_FALLBACK_URLS` (public SearXNG instances) in order
+4. Returns first successful response (with results > 0)
+5. Always includes `## Unresponsive Engines` section in response for transparency
+
+This means:
+- **No manual intervention** — searches keep working even when engines are blocked
+- **Zero config** — pre-configured fallback instances in `opencode.json`
+- **Transparent** — response always shows what failed and why
+- **Graceful degradation** — if all fallbacks fail, returns empty results with diagnostics
 
 ### Markdown formatting
 

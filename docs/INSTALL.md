@@ -35,7 +35,8 @@ docker compose up -d
       "enabled": true,
       "env": {
         "SEARXNG_HOST": "localhost",
-        "SEARXNG_PORT": "4000"
+        "SEARXNG_PORT": "4000",
+        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
       }
     }
   }
@@ -70,7 +71,8 @@ docker compose up -d
       "enabled": true,
       "env": {
         "SEARXNG_HOST": "localhost",
-        "SEARXNG_PORT": "4000"
+        "SEARXNG_PORT": "4000",
+        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
       }
     }
   }
@@ -114,7 +116,8 @@ Inspirado no [mind MCP](https://github.com/anomalyco/mind). Três camadas que tr
       "enabled": true,
       "env": {
         "SEARXNG_HOST": "localhost",
-        "SEARXNG_PORT": "4000"
+        "SEARXNG_PORT": "4000",
+        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
       }
     }
   }
@@ -199,7 +202,8 @@ Após atualizar, reinicie o OpenCode.
 |---------|---------------|---------|
 | Tools não aparecem | Caminho errado no config | Verifique se `dist/index.js` existe no path absoluto |
 | `web_search` retorna erro de conexão | SearXNG não está rodando | `docker compose up -d` no diretório do projeto |
-| `engines=wikipedia` retorna 0 resultados | Engine suspenso/bloqueado | Verifique `## Engines indisponíveis` na resposta |
+| `## Engines indisponíveis` com `brave: too many requests` | Engine bloqueado/rate-limited | **Fallback automático cuida disso** — nenhuma ação necessária |
+| Todos os engines retornam 0 resultados + todos indisponíveis | IP do servidor bloqueado | Defina `SEARXNG_FALLBACK_URLS` com instâncias públicas — fallback retry automático |
 | Highlights retorna página inteira | Página tem parágrafos curtos ou única seção | Use `mode=text` com `maxChars` menor |
 | Timeout no web_fetch | Página lenta ou bloqueando bots | Aumente o `SEARXNG_TIMEOUT` via env var |
 
@@ -216,7 +220,8 @@ Quando publicado, o setup será reduzido a:
       "enabled": true,
       "env": {
         "SEARXNG_HOST": "localhost",
-        "SEARXNG_PORT": "4000"
+        "SEARXNG_PORT": "4000",
+        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
       }
     }
   }

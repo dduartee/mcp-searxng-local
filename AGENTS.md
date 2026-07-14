@@ -59,6 +59,7 @@ src/
 - **Identifiers in English.** Function names, variable names, types, interfaces.
 - **Cache:** LRU in-memory (100 entries, 5min TTL). SearXNG also caches via Valkey.
 - **Retry:** `withRetry()` with exponential backoff + jitter. 3 retries for SearXNG, 2 for web_fetch.
+- **Rate limit handling:** Auto-fallback to public SearXNG instances when all local engines are unresponsive. Configured via `SEARXNG_FALLBACK_URLS` env var.
 
 ## Conventions
 
@@ -75,6 +76,7 @@ src/
 - SearXNG must be running (`docker compose up -d`) for tools to work. Health check: `curl -s "http://localhost:4000/search?q=test&format=json"`.
 - The `settings.yml` uses `use_default_settings: true` — only overridden settings need to be specified.
 - Engines may be blocked/suspended depending on server IP (especially DuckDuckGo, Brave). Response includes `unresponsive_engines` with reasons.
+- **Auto-fallback:** When all engines are unresponsive, the server automatically retries against public SearXNG instances (`SEARXNG_FALLBACK_URLS`). No manual intervention needed.
 - Highlights mode (`web_fetch`) uses keyword matching — ~98% token reduction vs full page.
 - Date filtering (`startPublishedDate`/`endPublishedDate`) is client-side. Undated results are excluded when date filter is active.
 

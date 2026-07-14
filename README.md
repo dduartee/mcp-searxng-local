@@ -8,6 +8,22 @@ MCP server for web search via [SearXNG](https://docs.searxng.org/) — **zero AP
 
 > Why not Exa? Costs money. Why not Brave? Requires API key. This: self-hosted, unlimited queries, your data never leaves your machine.
 
+## Rate Limit Handling & Fallback
+
+Search engines (Google, DuckDuckGo, Brave) frequently block server IPs with CAPTCHAs or rate limits. **mcp-searxng-local handles this automatically:**
+
+1. **Local query** — queries your self-hosted SearXNG with configured engines
+2. **Detection** — if all engines return 0 results and are marked unresponsive, triggers fallback
+3. **Fallback** — automatically retries against public SearXNG instances in order
+4. **Transparent** — response always includes `## Unresponsive Engines` section showing what failed and why
+
+```bash
+# Configure fallback instances (comma-separated, tried in order)
+export SEARXNG_FALLBACK_URLS="https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
+```
+
+Pre-configured in `opencode.json` with 3 public instances. Works out of the box — no setup needed.
+
 ## Prerequisites
 
 - [Node.js](https://nodejs.org) >= 20
@@ -127,7 +143,7 @@ See [Install Guide](docs/INSTALL.md) for all client configs.
 | `SEARXNG_HOST` | `localhost` | SearXNG host |
 | `SEARXNG_PORT` | `4000` | SearXNG port |
 | `SEARXNG_TIMEOUT` | `10000` | HTTP timeout (ms) |
-| `SEARXNG_FALLBACK_URLS` | — | Comma-separated public SearXNG URLs (auto-fallback when local engines fail) |
+| `SEARXNG_FALLBACK_URLS` | — | Comma-separated public SearXNG URLs (auto-retry when local engines are rate-limited or blocked) |
 | `DEBUG` | `false` | Enable verbose logging |
 
 Also accepts `MCP_SEARCH_LOCAL_` prefix: `MCP_SEARCH_LOCAL_SEARXNG_HOST`, `MCP_SEARCH_LOCAL_SEARXNG_PORT`, `MCP_SEARCH_LOCAL_TIMEOUT`, `MCP_SEARCH_LOCAL_DEBUG`.
@@ -138,8 +154,9 @@ Also accepts `MCP_SEARCH_LOCAL_` prefix: `MCP_SEARCH_LOCAL_SEARXNG_HOST`, `MCP_S
 |---------|-------|-----|
 | Tools don't appear | Path wrong or build missing | Run `npm run build`, verify `dist/index.js` exists |
 | `web_search` connection error | SearXNG not running | `docker compose up -d` |
-| `"Nenhum resultado encontrado"` with `engines=X` | Engine blocked/suspended | Check `## Engines indisponíveis` section in response; retry with different engine |
-| All engines return 0 results | Server IP blocked by search providers | Set `SEARXNG_FALLBACK_URLS` to public instances (e.g. `https://search.rhscz.eu,https://searx.tiekoetter.com`) — auto-fallback kicks in |
+| `## Unresponsive Engines` with `brave: too many requests` | Engine blocked/rate-limited | **Auto-fallback handles this** — no action needed. Add `SEARXNG_FALLBACK_URLS` for more options |
+| All engines return 0 results + all unresponsive | Server IP blocked by search providers | Set `SEARXNG_FALLBACK_URLS` to public instances. Fallback retries automatically |
+| Fallback returns 0 results too | Public instances also blocked or down | Try different instances in `SEARXNG_FALLBACK_URLS`, or wait and retry later |
 | Highlights returns full page | Page has no paragraph breaks or all text matches query | Use `mode=text` with smaller `maxChars` |
 | `web_fetch` timeout (15s) | Page is slow or .js-heavy SPA | Reduce `maxChars`, try a different URL |
 
@@ -162,7 +179,10 @@ MCP Client (OpenCode, Claude Code, Cursor...)
 mcp-searxng-local (Node.js + TypeScript)
   │ HTTP + LRU cache + exponential backoff retry
   ▼
-SearXNG (Docker) ← Google, DuckDuckGo, Brave, Wikipedia, arXiv, Bing
+SearXNG (Docker) ← Google, DuckDuckGo, Brave, Wikipedia, arXiv
+  │ if all engines unresponsive → auto-fallback
+  ▼
+Public SearXNG instances (search.rhscz.eu, searx.tiekoetter.com, ...)
 ```
 
 ## Documentation
