@@ -9,41 +9,41 @@ import { log } from '../utils/logger.js'
 const searchParams = {
   query: z.string()
     .min(1)
-    .describe('Termo de busca. Ex: "últimas notícias inteligência artificial 2026"'),
+    .describe('Search term. Ex: "latest artificial intelligence news 2026"'),
   count: z.number()
     .int().min(1).max(50).default(10)
-    .describe('Número de resultados (1-50, padrão 10)'),
+    .describe('Number of results (1-50, default 10)'),
   pageno: z.number()
     .int().min(1).default(1)
-    .describe('Página de resultados (padrão 1)'),
+    .describe('Results page (default 1)'),
   categories: z.enum(['general', 'news', 'images', 'files', 'video', 'music'])
     .optional()
     .describe('Categoria: general, news, images, files, video, music'),
   time_range: z.enum(['day', 'month', 'year'])
     .optional()
-    .describe('Filtro temporal: day, month ou year'),
+    .describe('Time filter: day, month, or year'),
   language: z.string()
     .optional()
-    .describe('Código do idioma: pt-BR, en-US, etc.'),
+    .describe('Language code: pt-BR, en-US, etc.'),
   includeDomains: z.array(z.string())
     .optional()
-    .describe('Apenas resultados destes domínios (ex: ["github.com", "wikipedia.org"])'),
+    .describe('Only results from these domains (ex: ["github.com", "wikipedia.org"])'),
   excludeDomains: z.array(z.string())
     .optional()
-    .describe('Excluir resultados destes domínios (ex: ["pinterest.com"])'),
+    .describe('Exclude results from these domains (ex: ["pinterest.com"])'),
   engines: z.string()
     .optional()
-    .describe('Selecionar engines: google, duckduckgo, brave, wikipedia, arxiv (separados por vírgula)'),
+    .describe('Select engines: google, duckduckgo, brave, wikipedia, arxiv (comma-separated)'),
   safesearch: z.number()
     .int().min(0).max(2)
     .optional()
     .describe('Safe search: 0=off, 1=moderate, 2=strict'),
   startPublishedDate: z.string()
     .optional()
-    .describe('Data ISO: "2024-01-01" — filtrar resultados publicados após esta data (client-side)'),
+    .describe('ISO date: "2024-01-01" — filter results published after this date (client-side)'),
   endPublishedDate: z.string()
     .optional()
-    .describe('Data ISO: "2024-12-31" — filtrar resultados publicados antes desta data (client-side)'),
+    .describe('ISO date: "2024-12-31" — filter results published before this date (client-side)'),
 } as const
 
 function filterByDomains(url: string, include?: string[], exclude?: string[]): boolean {
@@ -63,7 +63,7 @@ function filterByDate(
   end?: string
 ): boolean {
   if (!start && !end) return true
-  if (!publishedDate) return false // sem data = excluir quando filtro de data ativo
+  if (!publishedDate) return false // no date = exclude when date filter is active
   const d = new Date(publishedDate).getTime()
   if (isNaN(d)) return false
   if (start && d < new Date(start).getTime()) return false
@@ -111,7 +111,7 @@ function registerSearchTool(
         })
 
         response.results = filtered.slice(0, params.count)
-        log(`Retornando ${response.results.length} resultados`)
+        log(`Returning ${response.results.length} results`)
 
         return {
           content: [{
@@ -129,22 +129,22 @@ function registerSearchTool(
 export function registerWebSearchTool(server: McpServer, config: ServerConfig): void {
   registerSearchTool(
     server, config, 'web_search',
-    'Busca na web usando SearXNG (metasearch). '
-    + 'Agrega Google, DuckDuckGo, Brave, Wikipedia e mais. '
-    + 'Retorna títulos, URLs e snippets, além de respostas diretas e infoboxes quando disponíveis. '
-    + 'Suporta filtro por categoria (news, images), período (day, month, year), '
-    + 'domínios (include/exclude), engines específicos e safe search. '
-    + 'Use para perguntas que exigem informação atualizada da internet.'
+    'Web search via SearXNG (metasearch). '
+    + 'Aggregates Google, DuckDuckGo, Brave, Wikipedia and more. '
+    + 'Returns titles, URLs and snippets, plus direct answers and infoboxes when available. '
+    + 'Supports category (news, images), time range (day, month, year), '
+    + 'domain (include/exclude) filters, specific engines and safe search. '
+    + 'Use for questions requiring up-to-date information from the internet.'
   )
 }
 
 export function registerWebSearchAdvancedTool(server: McpServer, config: ServerConfig): void {
   registerSearchTool(
     server, config, 'web_search_advanced',
-    'Busca web avançada com controle total sobre filtros: domínios, datas exatas, '
-    + 'engines específicos, categorias, safe search. '
-    + 'Use quando precisar de filtragem precisa — '
-    + 'ex: "artigos do último mês apenas do arxiv.org e github.com". '
-    + 'Inclui respostas diretas, infoboxes, sugestões e correções ortográficas.'
+    'Advanced web search with full filter control: domains, exact dates, '
+    + 'specific engines, categories, safe search. '
+    + 'Use when you need precise filtering — '
+    + 'e.g. "articles from the last month only from arxiv.org and github.com". '
+    + 'Includes direct answers, infoboxes, suggestions and spelling corrections.'
   )
 }

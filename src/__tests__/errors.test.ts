@@ -7,40 +7,40 @@ import {
 } from '../utils/errors.js'
 
 describe('formatErrorResponse', () => {
-  it('formata SearxngConnectionError', () => {
+  it('formats SearxngConnectionError', () => {
     const err = new SearxngConnectionError('host down', new Error('ECONNREFUSED'))
     const res = formatErrorResponse(err)
     expect(res.isError).toBe(true)
-    expect(res.content[0].text).toContain('Erro de conexão')
+    expect(res.content[0].text).toContain('connection error')
     expect(res.content[0].text).toContain('docker compose up -d')
   })
 
-  it('formata FetchError', () => {
+  it('formats FetchError', () => {
     const err = new FetchError('Not Found', 'https://ex.com', 404)
     const res = formatErrorResponse(err)
     expect(res.isError).toBe(true)
-    expect(res.content[0].text).toContain('Erro ao acessar a URL')
+    expect(res.content[0].text).toContain('Error accessing URL')
     expect(res.content[0].text).toContain('https://ex.com')
   })
 
-  it('formata Error genérico', () => {
+  it('formats generic Error', () => {
     const res = formatErrorResponse(new Error('something broke'))
     expect(res.isError).toBe(true)
-    expect(res.content[0].text).toContain('Erro inesperado')
+    expect(res.content[0].text).toContain('Unexpected error')
     expect(res.content[0].text).toContain('something broke')
   })
 
   it('formata unknown error', () => {
     const res = formatErrorResponse('string error')
     expect(res.isError).toBe(true)
-    expect(res.content[0].text).toContain('Erro desconhecido')
+    expect(res.content[0].text).toContain('Unknown error')
   })
 
-  it('formata SearxngResponseError', () => {
+  it('formats SearxngResponseError', () => {
     const err = new SearxngResponseError('Forbidden', 403)
     const res = formatErrorResponse(err)
     expect(res.isError).toBe(true)
-    expect(res.content[0].text).toContain('Erro do SearXNG')
+    expect(res.content[0].text).toContain('SearXNG error')
     expect(res.content[0].text).toContain('403')
   })
 })

@@ -1,7 +1,7 @@
 /**
  * logger.ts
- * Utilitário de logging para debug do MCP server.
- * Quando debug=false (produção), logs são suprimidos.
+ * Logging utility for MCP server debug.
+ * When debug=false (production), logs are suppressed.
  */
 
 let debugMode = false

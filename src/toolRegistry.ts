@@ -4,19 +4,19 @@ export const TOOL_REGISTRY: Record<string, ToolMetadata> = {
   web_search: {
     id: 'web_search',
     name: 'Web Search',
-    description: 'Busca na web via SearXNG com filtros de categoria, período, domínios, engines e safe search. Inclui respostas diretas e infoboxes.',
+    description: 'Web search via SearXNG with category, time, domain, engine, and safe search filters. Includes direct answers and infoboxes.',
     enabled: true,
   },
   web_search_advanced: {
     id: 'web_search_advanced',
     name: 'Web Search Advanced',
-    description: 'Busca avançada com date range ISO, filtro de domínios, seleção de engines, safe search. Para queries que exigem filtragem precisa.',
+    description: 'Advanced search with ISO date range, domain filtering, engine selection, safe search. For queries requiring precise filtering.',
     enabled: true,
   },
   web_fetch: {
     id: 'web_fetch',
     name: 'Web Fetch',
-    description: 'Extrai conteúdo de URL. Modo "text" (página completa) ou "highlights" (trechos relevantes, ~10x menos tokens).',
+    description: 'Extract URL content. "text" mode (full page) or "highlights" mode (relevant excerpts, ~10x fewer tokens).',
     enabled: true,
   },
 }

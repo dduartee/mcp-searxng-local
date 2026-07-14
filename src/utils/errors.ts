@@ -1,13 +1,13 @@
 /**
  * errors.ts
- * Tratamento centralizado de erros para o MCP server.
- * Formata erros no formato esperado pelo MCP: { content, isError: true }.
+ * Centralized error handling for the MCP server.
+ * Formats errors in the MCP-expected format: { content, isError: true }.
  */
 
 import { error as logError } from './logger.js'
 
 /**
- * Erro customizado para falhas de conexão com o SearXNG.
+ * Custom error for SearXNG connection failures.
  */
 export class SearxngConnectionError extends Error {
   constructor(message: string, public readonly cause?: unknown) {
@@ -17,7 +17,7 @@ export class SearxngConnectionError extends Error {
 }
 
 /**
- * Erro customizado para respostas inesperadas do SearXNG.
+ * Custom error for unexpected SearXNG responses.
  */
 export class SearxngResponseError extends Error {
   constructor(
@@ -30,7 +30,7 @@ export class SearxngResponseError extends Error {
 }
 
 /**
- * Erro customizado para falhas no fetch de páginas web.
+ * Custom error for web page fetch failures.
  */
 export class FetchError extends Error {
   constructor(
@@ -44,8 +44,8 @@ export class FetchError extends Error {
 }
 
 /**
- * Converte qualquer erro em uma resposta MCP formatada corretamente.
- * O Claude interpreta isError=true como falha na execução da tool.
+ * Converts any error into a properly formatted MCP response.
+ * Claude interprets isError=true as a tool execution failure.
  */
 export function formatErrorResponse(error: unknown): {
   content: Array<{ type: 'text'; text: string }>
@@ -56,9 +56,9 @@ export function formatErrorResponse(error: unknown): {
     return {
       content: [{
         type: 'text',
-        text: '❌ Erro de conexão com o SearXNG. Verifique se o Docker está rodando:\n'
+        text: '❌ SearXNG connection error. Check if Docker is running:\n'
           + '  docker compose up -d\n\n'
-          + `Detalhes: ${error.message}`
+          + `Details: ${error.message}`
       }],
       isError: true,
     }
@@ -69,7 +69,7 @@ export function formatErrorResponse(error: unknown): {
     return {
       content: [{
         type: 'text',
-        text: `❌ Erro do SearXNG (HTTP ${error.statusCode ?? '?'}): ${error.message}`
+        text: `❌ SearXNG error (HTTP ${error.statusCode ?? '?'}): ${error.message}`
       }],
       isError: true,
     }
@@ -80,7 +80,7 @@ export function formatErrorResponse(error: unknown): {
     return {
       content: [{
         type: 'text',
-        text: `❌ Erro ao acessar a URL${error.url ? ` (${error.url})` : ''}: ${error.message}`
+        text: `❌ Error accessing URL${error.url ? ` (${error.url})` : ''}: ${error.message}`
       }],
       isError: true,
     }
@@ -91,7 +91,7 @@ export function formatErrorResponse(error: unknown): {
     return {
       content: [{
         type: 'text',
-        text: `❌ Erro inesperado: ${error.message}`
+        text: `❌ Unexpected error: ${error.message}`
       }],
       isError: true,
     }
@@ -100,7 +100,7 @@ export function formatErrorResponse(error: unknown): {
   return {
     content: [{
       type: 'text',
-      text: '❌ Erro desconhecido'
+      text: '❌ Unknown error'
     }],
     isError: true,
   }

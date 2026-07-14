@@ -1,18 +1,18 @@
 /**
  * fetchHtml.ts
- * Utilitário para extrair conteúdo de páginas web (web_fetch).
+ * Utility for extracting content from web pages (web_fetch).
  *
- * Estratégia:
- * 1. fetch() na URL alvo
- * 2. cheerio para parsear o HTML
- * 3. Remove tags irrelevantes (script, style, nav, footer, header)
- * 4. Extrai título, meta description e texto limpo
- * 5. Limita por maxChars para evitar estourar o contexto do Claude
+ * Strategy:
+ * 1. fetch() the target URL
+ * 2. cheerio to parse the HTML
+ * 3. Remove irrelevant tags (script, style, nav, footer, header)
+ * 4. Extract title, meta description and clean text
+ * 5. Limit by maxChars to avoid overflowing Claude's context
  *
- * Não usa Puppeteer/Playwright propositalmente:
- * - Mais leve (sem depender de Chromium)
- * - Mais rápido (sem renderizar JS)
- * - Contras: não executa JavaScript, páginas SPA podem vir vazias
+ * Intentionally does not use Puppeteer/Playwright:
+ * - Lighter (no Chromium dependency)
+ * - Faster (no JS rendering)
+ * - Downside: no JavaScript execution, SPA pages may come back empty
  */
 
 import * as cheerio from 'cheerio'
@@ -26,19 +26,19 @@ export interface ExtractedContent {
 }
 
 /**
- * Faz fetch de uma URL e extrai o conteúdo como texto limpo.
- * Ideal para páginas estáticas (artigos, blogs, documentação).
+ * Fetches a URL and extracts content as clean text.
+ * Ideal for static pages (articles, blogs, documentation).
  *
- * @param url - URL completa (precisa incluir http:// ou https://)
- * @param signal - AbortSignal opcional para timeout/cancelamento
+ * @param url - Full URL (must include http:// or https://)
+ * @param signal - Optional AbortSignal for timeout/cancellation
  */
 export async function extractFromUrl(
   url: string,
   signal?: AbortSignal
 ): Promise<ExtractedContent> {
-  // Validação básica da URL
+  // Basic URL validation
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    throw new FetchError('URL precisa começar com http:// ou https://', url)
+    throw new FetchError('URL must start with http:// or https://', url)
   }
 
   let response: Response
@@ -55,7 +55,7 @@ export async function extractFromUrl(
     )
   } catch (err) {
     throw new FetchError(
-      err instanceof Error ? err.message : 'Falha na requisição',
+      err instanceof Error ? err.message : 'Request failed',
       url
     )
   }
@@ -84,17 +84,17 @@ export async function extractFromUrl(
   const html = await response.text()
   const $ = cheerio.load(html)
 
-  // Extrai título da página
+  // Extract page title
   const title = $('title').first().text().trim() || url
 
-  // Extrai meta description
+  // Extract meta description
   const description =
     $('meta[name="description"]').attr('content')?.trim() || null
 
-  // Remove elementos que não são conteúdo principal
+  // Remove elements that are not main content
   $('script, style, nav, footer, header, aside, .sidebar, .menu, iframe').remove()
 
-  // Extrai o texto limpo do body
+  // Extract clean text from body
   const text = $('body')
     .text()
     .replace(/\n{3,}/g, '\n\n')
@@ -105,7 +105,7 @@ export async function extractFromUrl(
     .trim()
 
   if (!text) {
-    throw new FetchError('Página vazia ou sem conteúdo textual. Pode ser uma SPA que precisa de JavaScript.', url)
+    throw new FetchError('Empty page or no text content. It may be an SPA that requires JavaScript.', url)
   }
 
   return { title, description, text }

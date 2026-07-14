@@ -9,16 +9,16 @@ import { log } from '../utils/logger.js'
 const fetchParams = {
   url: z.string()
     .url()
-    .describe('URL completa da página para extrair conteúdo (ex: https://example.com)'),
+    .describe('Full page URL to extract content from (ex: https://example.com)'),
   maxChars: z.number()
     .int().min(100).max(50000).default(5000)
-    .describe('Máximo de caracteres do conteúdo (100-50000, padrão 5000)'),
+    .describe('Maximum content characters (100-50000, default 5000)'),
   mode: z.enum(['text', 'highlights'])
     .default('text')
-    .describe('Modo: "text" retorna página completa; "highlights" extrai trechos relevantes (requer query)'),
+    .describe('Mode: "text" returns full page; "highlights" extracts relevant excerpts (requires query)'),
   query: z.string()
     .optional()
-    .describe('Query para extrair highlights — use a mesma query do web_search que levou a esta URL'),
+    .describe('Query to extract highlights — use the same query from web_search that led to this URL'),
 } as const
 
 export function registerWebFetchTool(
@@ -29,12 +29,12 @@ export function registerWebFetchTool(
 
   server.tool(
     'web_fetch',
-    'Extrai o conteúdo de uma página web como texto limpo. '
-    + 'Suporta dois modos: "text" (página completa, padrão) e "highlights" '
-    + '(trechos mais relevantes para uma query, ~10x menos tokens). '
-    + 'Prefira "highlights" com query para buscas factuais. '
-    + 'Use "text" para análise profunda. '
-    + 'Ideal para ler artigos, documentação e blogs.',
+    'Extracts page content as clean text. '
+    + 'Supports two modes: "text" (full page, default) and "highlights" '
+    + '(most relevant excerpts for a query, ~10x fewer tokens). '
+    + 'Prefer "highlights" with a query for factual searches. '
+    + 'Use "text" for deep analysis. '
+    + 'Ideal for reading articles, documentation and blogs.',
     fetchParams,
     { readOnlyHint: true, destructiveHint: false, idempotentHint: true },
     async (params) => {
@@ -66,7 +66,7 @@ export function registerWebFetchTool(
         }
       } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') {
-          return formatErrorResponse(new Error(`Timeout: a página demorou mais de ${fetchTimeout / 1000}s para responder`))
+          return formatErrorResponse(new Error(`Timeout: page took more than ${fetchTimeout / 1000}s to respond`))
         }
         return formatErrorResponse(err)
       }

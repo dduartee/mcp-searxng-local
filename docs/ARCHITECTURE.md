@@ -1,9 +1,9 @@
-# Arquitetura Interna
+# Internal Architecture
 
-## Fluxo de uma requisição
+## Request flow
 
 ```
-Cliente MCP (OpenCode / Claude Code)
+MCP Client (OpenCode / Claude Code)
   │ JSON-RPC via stdio
   ▼
 src/index.ts ───────────────────────── entry point
@@ -12,75 +12,75 @@ src/index.ts ──────────────────────�
 src/server.ts ───────────────────────── factory + register tools
   │ McpServer.tool("web_search", ...)
   ▼
-src/tools/webSearch.ts ──────────────── valida params (Zod), chama SearXNG
+src/tools/webSearch.ts ──────────────── validates params (Zod), calls SearXNG
   │ createSearxngClient(config)
   ▼
 src/engines/searxng.ts ──────────────── HTTP → SearXNG API
   │ cache (5min TTL) + retry (3x, exp backoff)
   ▼
-SearXNG (Docker, porta 4000) ────────── metasearch: Google, DDG, Brave...
+SearXNG (Docker, port 4000) ────────── metasearch: Google, DDG, Brave...
   │ JSON response { results, answers, infoboxes, suggestions }
   ▼
-src/utils/formatter.ts ──────────────── markdown formatado para o LLM
+src/utils/formatter.ts ──────────────── formatted markdown for the LLM
   │ formatFullSearchResponse()
   ▼
-Resposta MCP ────────────────────────── { content: [{ type: "text", text: "..." }] }
+MCP Response ────────────────────────── { content: [{ type: "text", text: "..." }] }
 ```
 
-## Estrutura de diretórios
+## Directory structure
 
 ```
 src/
 ├── index.ts                # Entry point (stdio)
-├── http.ts                 # Entry point alternativo (Streamable HTTP)
-├── server.ts               # Factory McpServer + registro de tools
-├── toolRegistry.ts         # Metadados das ferramentas
-├── types.ts                # Interfaces compartilhadas
+├── http.ts                 # Alternative entry point (Streamable HTTP)
+├── server.ts               # McpServer factory + tool registration
+├── toolRegistry.ts         # Tool metadata
+├── types.ts                # Shared interfaces
 ├── tools/
-│   ├── webSearch.ts        # web_search + web_search_advanced (handler unificado)
+│   ├── webSearch.ts        # web_search + web_search_advanced (unified handler)
 │   └── webFetch.ts         # web_fetch (text + highlights)
 ├── engines/
-│   ├── searxng.ts          # Cliente HTTP SearXNG (cache + retry)
-│   └── fetchHtml.ts        # Fetch + cheerio (HTML → texto limpo)
+│   ├── searxng.ts          # SearXNG HTTP client (cache + retry)
+│   └── fetchHtml.ts        # Fetch + cheerio (HTML → clean text)
 └── utils/
-    ├── formatter.ts        # Formatação markdown + extractHighlights
-    ├── errors.ts           # Classes de erro + formatador MCP
-    ├── logger.ts           # Logging condicional (debug on/off)
-    ├── retry.ts            # Retry com exponential backoff + jitter
-    └── cache.ts            # Cache LRU em memória com TTL
+    ├── formatter.ts        # Markdown formatting + extractHighlights
+    ├── errors.ts           # Error classes + MCP formatter
+    ├── logger.ts           # Conditional logging (debug on/off)
+    ├── retry.ts            # Retry with exponential backoff + jitter
+    └── cache.ts            # In-memory LRU cache with TTL
 ```
 
-## Decisões de design
+## Design decisions
 
-### Transporte: stdio como primário
+### Transport: stdio as primary
 
-stdio é o transporte mais compatível com clientes MCP. Não expõe porta, não requer configuração de rede, e funciona com qualquer cliente (OpenCode, Claude Code, Cursor, VS Code).
+stdio is the most compatible transport with MCP clients. It exposes no port, requires no network configuration, and works with any client (OpenCode, Claude Code, Cursor, VS Code).
 
-`src/http.ts` existe como alternativa para acesso remoto, usando `StreamableHTTPServerTransport`.
+`src/http.ts` exists as an alternative for remote access, using `StreamableHTTPServerTransport`.
 
 ### Cache
 
-O MCP server mantém um cache LRU em memória (100 entradas, 5 min TTL) para evitar chamadas redundantes ao SearXNG quando o agente repete a mesma query. O SearXNG também usa Valkey internamente para cache de engines.
+The MCP server maintains an in-memory LRU cache (100 entries, 5 min TTL) to avoid redundant calls to SearXNG when the agent repeats the same query. SearXNG also uses Valkey internally for engine caching.
 
-### Retry com exponential backoff
+### Retry with exponential backoff
 
-Conexões ao SearXNG e fetch de páginas usam `withRetry()` com:
-- 3 tentativas (SearXNG), 2 tentativas (web_fetch)
+Connections to SearXNG and page fetches use `withRetry()` with:
+- 3 attempts (SearXNG), 2 attempts (web_fetch)
 - Delay: 500ms → 1s → 2s (SearXNG), 1s → 2s (web_fetch)
-- Jitter aleatório (±200ms) para evitar thundering herd
+- Random jitter (±200ms) to avoid thundering herd
 
-### Zod para validação
+### Zod for validation
 
-Usamos Zod v3 (compatível com MCP SDK v1). Os schemas são descritos com `.describe()` — o LLM lê essas descrições para entender quando e como usar cada parâmetro.
+We use Zod v3 (compatible with MCP SDK v1). Schemas are described with `.describe()` — the LLM reads these descriptions to understand when and how to use each parameter.
 
-### Formatação markdown
+### Markdown formatting
 
-Toda resposta é formatada como markdown. O LLM consome markdown nativamente e extrai informações estruturadas (URLs, títulos, snippets) sem precisar de parsing JSON.
+All responses are formatted as markdown. The LLM consumes markdown natively and extracts structured information (URLs, titles, snippets) without needing JSON parsing.
 
-## Testes
+## Tests
 
-28 testes unitários com vitest cobrindo:
+28 unit tests with vitest covering:
 - `formatter.test.ts` — highlights, full response, domain filtering
-- `errors.test.ts` — classes de erro, formatador MCP
-- `retry.test.ts` — comportamento de retry e fallback
+- `errors.test.ts` — error classes, MCP formatter
+- `retry.test.ts` — retry behavior and fallback
 - `logger.test.ts` — debug on/off

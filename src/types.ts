@@ -1,6 +1,6 @@
 /**
  * types.ts
- * Tipos compartilhados entre os módulos do MCP server.
+ * Shared types across MCP server modules.
  */
 
 export interface SearxngResult {
@@ -48,17 +48,17 @@ export interface WebSearchParams {
   categories?: string
   time_range?: 'day' | 'month' | 'year'
   language?: string
-  /** Incluir apenas domínios específicos (filtro client-side) */
+  /** Include only specific domains (client-side filter) */
   includeDomains?: string[]
-  /** Excluir domínios específicos (filtro client-side) */
+  /** Exclude specific domains (client-side filter) */
   excludeDomains?: string[]
   /** Engines do SearXNG: google, duckduckgo, brave, wikipedia, arxiv */
   engines?: string
   /** safe search: 0=off, 1=moderate, 2=strict */
   safesearch?: number
-  /** Data ISO: "2024-01-01" — resultados publicados após esta data (client-side) */
+  /** ISO date: "2024-01-01" — results published after this date (client-side) */
   startPublishedDate?: string
-  /** Data ISO: "2024-12-31" — resultados publicados antes desta data (client-side) */
+  /** ISO date: "2024-12-31" — results published before this date (client-side) */
   endPublishedDate?: string
 }
 
@@ -67,9 +67,9 @@ export interface WebSearchAdvancedParams extends WebSearchParams {}
 export interface WebFetchParams {
   url: string
   maxChars?: number
-  /** Query para extrair highlights (trechos relevantes) em vez da página inteira */
+  /** Query to extract highlights (relevant excerpts) instead of the full page */
   query?: string
-  /** Modo: text (página inteira) ou highlights (só trechos relevantes) */
+  /** Mode: text (full page) or highlights (relevant excerpts only) */
   mode?: 'text' | 'highlights'
 }
 

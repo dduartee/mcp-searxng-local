@@ -1,14 +1,14 @@
-# settings.yml do SearXNG
-# Configuração mínima para funcionar como backend do MCP server
-# O formato JSON PRECISA estar habilitado para o MCP conseguir ler os resultados
+# SearXNG settings.yml
+# Minimal configuration for MCP server backend
+# JSON format MUST be enabled for MCP to read results
 
-# Herda defaults do SearXNG (evita erros de chaves faltando)
+# Inherits SearXNG defaults (prevents missing key errors)
 use_default_settings: true
 
 general:
   instance_name: "mcp-search-local"
   debug: false
-  privacidade:
+  privacy:
     store_json_result: false
 
 search:
@@ -17,46 +17,46 @@ search:
     - json
 
 server:
-  # Bind em 0.0.0.0 para o Docker conseguir receber conexões
+  # Bind to 0.0.0.0 so Docker can receive connections
   bind_address: "0.0.0.0"
-  # Porta interna (o docker-compose mapeia 8080 -> 4000)
+  # Internal port (docker-compose maps 8080 -> 4000)
   port: 8080
-  # Timeout para consultar engines externos
+  # Timeout for querying external engines
   method: "GET"
-  # Não requer login
+  # No authentication required
   secret_key: "change-me-in-production"
 
 ui:
   static_use_hash: true
 
-# Engines ativos — você pode desativar alguns para reduzir latência
-# Quanto mais engines, mais lenta a resposta (mas mais resultados)
+# Active engines — disable some to reduce latency
+# More engines = slower response (but more results)
 engines:
-  # Google é o engine mais importante (melhores resultados)
+  # Google is the most important engine (best results)
   - name: google
     shortcut: g
     disabled: false
 
-  # DuckDuckGo como fallback primário (não precisa de API key)
+  # DuckDuckGo as primary fallback (no API key needed)
   - name: duckduckgo
     shortcut: d
     disabled: false
 
-  # Brave Search (gratuito, resultados decentes)
+  # Brave Search (free, decent results)
   - name: brave
     shortcut: b
     disabled: false
 
-  # Wikipedia para resultados enciclopédicos
+  # Wikipedia for encyclopedic results
   - name: wikipedia
     shortcut: wp
     disabled: false
 
-  # arXiv para papers acadêmicos
+  # arXiv for academic papers
   - name: arxiv
     shortcut: ar
     disabled: false
 
-# Cache via Valkey (reduz latência em consultas repetidas)
+# Cache via Valkey (reduces latency on repeated queries)
 redis:
   url: "redis://valkey:6379/0"

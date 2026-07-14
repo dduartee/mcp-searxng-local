@@ -1,12 +1,12 @@
 /**
  * searxng.ts
- * Cliente HTTP para a API do SearXNG.
+ * HTTP client for the SearXNG API.
  *
- * O SearXNG expõe uma API REST simples:
+ * SearXNG exposes a simple REST API:
  *   GET /search?q=<query>&format=json&...
  *
- * Abstrai a comunicação HTTP e o parsing da resposta.
- * O MCP server nunca chama o SearXNG diretamente — sempre via este módulo.
+ * Abstracts HTTP communication and response parsing.
+ * The MCP server never calls SearXNG directly — always through this module.
  */
 
 import axios from 'axios'
@@ -17,15 +17,15 @@ import { withRetry } from '../utils/retry.js'
 import { MemoryCache } from '../utils/cache.js'
 
 /**
- * Cria uma instância do cliente SearXNG.
- * Factory function para permitir config fácil.
+ * Creates a SearXNG client instance.
+ * Factory function for easy configuration.
  */
 export function createSearxngClient(config: ServerConfig) {
   const baseURL = `http://${config.searxngHost || 'localhost'}:${config.searxngPort || 4000}`
   const timeout = config.searxngTimeout || 10000
   const cache = new MemoryCache<SearxngResponse>(100)
 
-  log(`SearXNG client configurado: ${baseURL}, timeout: ${timeout}ms`)
+  log(`SearXNG client configured: ${baseURL}, timeout: ${timeout}ms`)
 
   function cacheKey(params: SearxngSearchParams): string {
     return [
@@ -39,10 +39,10 @@ export function createSearxngClient(config: ServerConfig) {
   }
 
   /**
-   * Executa uma busca no SearXNG e retorna a resposta parseada.
+   * Executes a search on SearXNG and returns the parsed response.
    *
-   * @param params - Parâmetros da busca (query, categorias, página, etc.)
-   * @param signal - AbortSignal para cancelamento (opcional)
+   * @param params - Search parameters (query, categories, page, etc.)
+   * @param signal - AbortSignal for cancellation (optional)
    */
   async function search(
     params: SearxngSearchParams,
@@ -57,7 +57,7 @@ export function createSearxngClient(config: ServerConfig) {
 
     const url = `${baseURL}/search`
 
-    log(`Buscando: ${params.q}`)
+    log(`Searching: ${params.q}`)
 
     async function makeRequest(): Promise<SearxngResponse> {
       const response = await axios.get<SearxngResponse>(url, {
@@ -78,32 +78,32 @@ export function createSearxngClient(config: ServerConfig) {
 
       if (response.status === 403) {
         throw new SearxngResponseError(
-          'SearXNG retornou 403 Forbidden. Verifique se "json" está em search.formats no settings.yml.',
+          'SearXNG returned 403 Forbidden. Check if "json" is in search.formats in settings.yml.',
           response.status
         )
       }
 
       if (response.status === 404) {
         throw new SearxngResponseError(
-          'SearXNG retornou 404. Verifique a URL base no docker-compose.',
+          'SearXNG returned 404. Check the base URL in docker-compose.',
           response.status
         )
       }
 
       if (response.status === 429 || response.status >= 500) {
         throw new SearxngConnectionError(
-          `SearXNG retornou status ${response.status} — tentando novamente...`
+          `SearXNG returned status ${response.status} — retrying...`
         )
       }
 
       if (response.status !== 200) {
         throw new SearxngResponseError(
-          `SearXNG retornou status ${response.status}.`,
+          `SearXNG returned status ${response.status}.`,
           response.status
         )
       }
 
-      log(`Recebidos ${response.data.results?.length || 0} resultados`)
+      log(`Received ${response.data.results?.length || 0} results`)
       return response.data
     }
 
@@ -116,22 +116,22 @@ export function createSearxngClient(config: ServerConfig) {
       return result
     } catch (err) {
       if (axios.isCancel(err)) {
-        throw new SearxngConnectionError('Requisição cancelada.')
+        throw new SearxngConnectionError('Request cancelled.')
       }
       if (err instanceof SearxngResponseError) {
         throw err
       }
       throw new SearxngConnectionError(
-        `Não foi possível conectar ao SearXNG em ${baseURL}. `
-        + 'Execute "docker compose up -d" primeiro.',
+        `Could not connect to SearXNG at ${baseURL}. `
+        + 'Run "docker compose up -d" first.',
         err
       )
     }
   }
 
   /**
-   * Verifica se o SearXNG está respondendo.
-   * Útil no startup para dar feedback imediato.
+   * Checks if SearXNG is responding.
+   * Useful at startup for immediate feedback.
    */
   async function healthCheck(): Promise<boolean> {
     try {

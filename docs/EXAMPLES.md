@@ -1,6 +1,6 @@
-# Exemplos de Uso
+# Usage Examples
 
-## Básico: busca simples
+## Basic: simple search
 
 ```json
 {
@@ -14,9 +14,9 @@
 }
 ```
 
-Retorna resultados do Google, DuckDuckGo, Brave, Wikipedia com snippets formatados.
+Returns results from Google, DuckDuckGo, Brave, Wikipedia with formatted snippets.
 
-## Com filtro de engine
+## With engine filter
 
 ```json
 {
@@ -29,14 +29,14 @@ Retorna resultados do Google, DuckDuckGo, Brave, Wikipedia com snippets formatad
 }
 ```
 
-Usa apenas Wikipedia e arXiv. Se algum engine estiver indisponível, a resposta inclui:
+Uses only Wikipedia and arXiv. If any engine is unavailable, the response includes:
 
 ```
-## Engines indisponíveis
+## Unavailable engines
 - brave: Suspended: too many requests
 ```
 
-## Com filtro de domínio
+## With domain filter
 
 ```json
 {
@@ -49,9 +49,9 @@ Usa apenas Wikipedia e arXiv. Se algum engine estiver indisponível, a resposta 
 }
 ```
 
-Restringe a domínios oficiais, exclui redes sociais.
+Restricts to official domains, excludes social media.
 
-## Com filtro de data
+## With date filter
 
 ```json
 {
@@ -64,9 +64,9 @@ Restringe a domínios oficiais, exclui redes sociais.
 }
 ```
 
-Apenas resultados com data de publicação a partir de 2026. Resultados sem data são excluídos.
+Only results with publication date from 2026 onward. Results without a date are excluded.
 
-## Web Fetch: modo texto completo
+## Web Fetch: full text mode
 
 ```json
 {
@@ -79,9 +79,9 @@ Apenas resultados com data de publicação a partir de 2026. Resultados sem data
 }
 ```
 
-Retorna a página completa como markdown limpo (sem scripts, nav, footer).
+Returns the full page as clean markdown (no scripts, nav, footer).
 
-## Web Fetch: modo highlights
+## Web Fetch: highlights mode
 
 ```json
 {
@@ -95,11 +95,11 @@ Retorna a página completa como markdown limpo (sem scripts, nav, footer).
 }
 ```
 
-Extrai apenas parágrafos relevantes. Resposta típica:
+Extracts only relevant paragraphs. Typical response:
 
 ```markdown
 # Preboot Execution Environment - ArchWiki
-Fonte: https://wiki.archlinux.org/title/Preboot_Execution_Environment
+Source: https://wiki.archlinux.org/title/Preboot_Execution_Environment
 
 dhcp-boot=/boot/syslinux/lpxelinux.0
 
@@ -107,10 +107,10 @@ pxe-service=X86-64_EFI, "Boot from network X86-64 EFI", ipxe.efi
 
 archiso_nfs_srv=${pxeserver}:/mnt/archiso
 
-> Trechos relevantes (341 de 15197 caracteres, ~98% menor).
+> Relevant excerpts (341 of 15197 characters, ~98% smaller).
 ```
 
-## Busca avançada com todos os filtros
+## Advanced search with all filters
 
 ```json
 {
@@ -125,50 +125,50 @@ archiso_nfs_srv=${pxeserver}:/mnt/archiso
 }
 ```
 
-## Fluxo real de um agente
+## Real agent workflow
 
-Exemplo de como um agente de IA usa as tools em sequência:
+Example of how an AI agent uses the tools in sequence:
 
 ```
 1. web_search("best Linux distro for gaming NVIDIA 2026", count=10)
-   → 10 snippets de distros candidatas
+   → 10 snippets of candidate distros
 
 2. web_fetch(url="https://bazzite.gg", mode="highlights", query="NVIDIA driver support GTX 1060")
-   → confirma driver 580 disponível no Bazzite
+   → confirms driver 580 available on Bazzite
 
 3. web_search("Nobara NVIDIA Pascal GTX 1060", engines="google", includeDomains=["reddit.com"])
-   → descobre que Nobara dropou suporte Pascal
+   → discovers Nobara dropped Pascal support
 
 4. web_search_advanced("ProtonDB Linux distro NVIDIA", startPublishedDate="2026-01-01")
-   → dados recentes de compatibilidade
+   → recent compatibility data
 
 5. web_fetch(url="https://archlinux.org/download/", mode="text", maxChars=2000)
-   → confirma tamanho da ISO (1.5 GB)
+   → confirms ISO size (1.5 GB)
 ```
 
-## Testando via CLI (sem cliente MCP)
+## Testing via CLI (without MCP client)
 
 ```bash
-# Listar tools disponíveis
+# List available tools
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/index.js
 
-# Fazer uma busca
+# Perform a search
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"web_search","arguments":{"query":"Python asyncio tutorial","count":3}}}' | node dist/index.js
 
-# Fazer web_fetch com highlights
+# Perform web_fetch with highlights
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"web_fetch","arguments":{"url":"https://example.com","mode":"highlights","query":"example query"}}}' | node dist/index.js
 ```
 
-## Streamable HTTP (alternativa ao stdio)
+## Streamable HTTP (alternative to stdio)
 
 ```bash
-# Iniciar servidor HTTP
+# Start HTTP server
 MCP_PORT=3000 node dist/http.js
 
 # Health check
 curl http://localhost:3000/health
 
-# Usar via cliente MCP remoto
+# Use via remote MCP client
 # opencode.json:
 {
   "mcp": {

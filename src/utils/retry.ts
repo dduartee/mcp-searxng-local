@@ -1,7 +1,7 @@
 /**
  * retry.ts
- * Retry com exponential backoff e jitter.
- * Usado tanto no SearXNG quanto no web_fetch para resiliência.
+ * Retry with exponential backoff and jitter.
+ * Used in both SearXNG and web_fetch for resilience.
  */
 
 interface RetryOptions {

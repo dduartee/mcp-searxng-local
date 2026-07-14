@@ -3,11 +3,11 @@ import { formatSearchResults, formatPageContent, extractHighlights, formatFullSe
 import type { SearxngResult, SearxngResponse } from '../types.js'
 
 describe('formatSearchResults', () => {
-  it('retorna mensagem de vazio para array vazio', () => {
-    expect(formatSearchResults([])).toContain('Nenhum resultado encontrado')
+  it('returns empty message for empty array', () => {
+    expect(formatSearchResults([])).toContain('No results found')
   })
 
-  it('formata resultados com título, URL e engine', () => {
+  it('formats results with title, URL, and engine', () => {
     const results: SearxngResult[] = [{
       title: 'Test Page', url: 'https://example.com', content: 'snippet',
       engine: 'google', category: 'general',
@@ -18,7 +18,7 @@ describe('formatSearchResults', () => {
     expect(result).toContain('google')
   })
 
-  it('suprime engine quando includeEngine=false', () => {
+  it('suppresses engine when includeEngine=false', () => {
     const results: SearxngResult[] = [{
       title: 'T', url: 'https://x.com', content: '', engine: 'g', category: 'general',
     }]
@@ -33,30 +33,30 @@ describe('formatFullSearchResponse', () => {
     corrections: [], suggestions: [], unresponsive_engines: [],
   }
 
-  it('inclui answers quando presentes', () => {
+  it('includes answers when present', () => {
     const r = { ...baseResponse, answers: ['Paris is the capital of France'] }
-    expect(formatFullSearchResponse(r)).toContain('Respostas diretas')
+    expect(formatFullSearchResponse(r)).toContain('Direct Answers')
     expect(formatFullSearchResponse(r)).toContain('Paris')
   })
 
-  it('inclui infoboxes quando presentes', () => {
+  it('includes infoboxes when present', () => {
     const r = { ...baseResponse, infoboxes: [{ infobox: 'Wikipedia', content: 'info', url: 'https://x.com' }] }
     expect(formatFullSearchResponse(r)).toContain('Infoboxes')
     expect(formatFullSearchResponse(r)).toContain('Wikipedia')
   })
 
-  it('inclui suggestions e corrections', () => {
+  it('includes suggestions and corrections', () => {
     const r = { ...baseResponse, suggestions: ['did you mean X?'], corrections: ['spelling fix'] }
     const out = formatFullSearchResponse(r)
-    expect(out).toContain('Sugestões')
-    expect(out).toContain('Correções')
+    expect(out).toContain('Search Suggestions')
+    expect(out).toContain('Spelling Corrections')
   })
 
-  it('não inclui seções vazias', () => {
+  it('does not include empty sections', () => {
     const out = formatFullSearchResponse(baseResponse)
-    expect(out).not.toContain('Respostas diretas')
+    expect(out).not.toContain('Direct Answers')
     expect(out).not.toContain('Infoboxes')
-    expect(out).toContain('Resultados')
+    expect(out).toContain('Results')
   })
 })
 
@@ -69,39 +69,39 @@ describe('extractHighlights', () => {
     'Many companies are adopting Rust for systems programming.',
   ].join('\n\n')
 
-  it('extrai parágrafos relevantes por keyword match', () => {
+  it('extracts relevant paragraphs by keyword match', () => {
     const result = extractHighlights(text, 'Rust programming language', 500)
     expect(result).toContain('Rust programming language')
     expect(result).not.toContain('Lorem ipsum')
   })
 
-  it('limita por maxChars', () => {
+  it('limits by maxChars', () => {
     const result = extractHighlights(text, 'Rust', 80)
     expect(result.length).toBeLessThanOrEqual(100)
   })
 
-  it('retorna vazio quando nada relevante', () => {
+  it('returns empty when nothing relevant', () => {
     const result = extractHighlights(text, 'xyzabc123', 100)
     expect(result).toBe('')
   })
 })
 
 describe('formatPageContent', () => {
-  it('usa mode highlights com query', () => {
+  it('uses highlights mode with query', () => {
     const text = 'This is just some irrelevant introductory text that does not matter at all.\n\n'
       + 'Rust is a great language for building command-line tools. It provides memory safety without garbage collection.\n\n'
       + 'More irrelevant content that nobody cares about in this context.'
     const result = formatPageContent('https://ex.com', 'Page', null, text, 500, 'highlights', 'Rust CLI tools')
     expect(result).toContain('Rust')
-    expect(result).toContain('Trechos relevantes')
+    expect(result).toContain('Relevant excerpts')
   })
 
-  it('fallback para text completo quando query não casa', () => {
+  it('falls back to full text when query doesn\'t match', () => {
     const text = 'Some random content here about flowers.\n\n'
       + 'More gardening stuff that has nothing to do with the search.\n\n'
       + 'Additional plant-related information here too more words fill.'
     const result = formatPageContent('https://ex.com', 'Page', null, text, 500, 'highlights', 'xyz')
     expect(result).toContain('random content')
-    expect(result).not.toContain('Trechos relevantes')
+    expect(result).not.toContain('Relevant excerpts')
   })
 })

@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
  * http.ts
- * Entry point alternativo: servidor MCP via Streamable HTTP.
+ * Alternative entry point: MCP server via Streamable HTTP.
  *
- * Útil quando o cliente MCP não suporta stdio ou
- * quando você quer acesso remoto ao servidor.
+ * Useful when the MCP client doesn't support stdio or
+ * when you want remote access to the server.
  *
- * Uso:
- *   node dist/http.js              (porta padrão 3000)
+ * Usage:
+ *   node dist/http.js              (default port 3000)
  *   MCP_PORT=3001 node dist/http.js
  *
  * Configuração no opencode.json (HTTP):
@@ -56,7 +56,7 @@ async function main(): Promise<void> {
 
   const healthy = await checkSearxngHealth(config)
   if (!healthy) {
-    warn('⚠️  SearXNG não está respondendo. Execute "docker compose up -d" primeiro.')
+    warn('⚠️  SearXNG is not responding. Run "docker compose up -d" first.')
   }
 
   const mcpServer = createMcpServer(config)
@@ -68,7 +68,7 @@ async function main(): Promise<void> {
   await mcpServer.connect(transport)
 
   const httpServer = createServer(async (req, res) => {
-    // CORS para clientes web
+    // CORS for web clients
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With')
@@ -86,7 +86,7 @@ async function main(): Promise<void> {
       return
     }
 
-    // Lê o body para requisições POST
+    // Read body for POST requests
     let body: unknown = undefined
     if (req.method === 'POST') {
       const chunks: Buffer[] = []

@@ -1,19 +1,19 @@
 /**
  * server.ts
- * Configuração central do servidor MCP.
+ * Central MCP server configuration.
  *
- * Responsabilidades:
- * 1. Criar a instância do McpServer (nome, versão, metadados)
- * 2. Registrar todas as tools (web_search, web_fetch)
- * 3. Expor resources (lista de tools, health check)
- * 4. Fornecer factory function para criar o servidor configurado
+ * Responsibilities:
+ * 1. Create the McpServer instance (name, version, metadata)
+ * 2. Register all tools (web_search, web_fetch)
+ * 3. Expose resources (tool list, health check)
+ * 4. Provide factory function to create the configured server
  *
- * Inspirado no Exa MCP (src/mcp-handler.ts):
- *   initializeMcpServer(server, config) -> registra tools baseado na config
+ * Inspired by Exa MCP (src/mcp-handler.ts):
+ *   initializeMcpServer(server, config) -> registers tools based on config
  *
- * A diferença é que este servidor é mais simples (2 tools vs 14 do Exa),
- * então não precisamos de toolRegistry com enabled/disabled dinâmico.
- * Mas mantivemos o toolRegistry para consistência e extensibilidade.
+ * The difference is that this server is simpler (2 tools vs Exa's 14),
+ * so we don't need a toolRegistry with dynamic enabled/disabled.
+ * But we kept the toolRegistry for consistency and extensibility.
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
@@ -25,42 +25,42 @@ import { setDebug, log } from './utils/logger.js'
 import { createSearxngClient } from './engines/searxng.js'
 
 /**
- * Factory: cria e configura um servidor MCP completo.
+ * Factory: creates and configures a complete MCP server.
  *
- * @param config  - Configuração (porta SearXNG, debug, etc.)
- * @returns       - Instância do McpServer pronta para conectar
+ * @param config  - Configuration (SearXNG port, debug, etc.)
+ * @returns       - McpServer instance ready to connect
  */
 export function createServer(config: ServerConfig = {}): McpServer {
-  // Ativa logs detalhados se debug=true
+  // Enable verbose logs if debug=true
   if (config.debug) {
     setDebug(true)
   }
 
-  log('Criando servidor MCP...')
+  log('Creating MCP server...')
   log(`Config: ${JSON.stringify(config)}`)
 
-  // Cria a instância do McpServer
-  // O name é usado pelo cliente MCP para identificar o servidor
+  // Create the McpServer instance
+  // The name is used by the MCP client to identify the server
   const server = new McpServer({
     name: 'mcp-searxng-local',
     version: '0.1.0',
   })
 
-  // Registra as ferramentas
-  // Cada tool vira um "tool" no protocolo MCP, listável e chamável
-  log('Registrando ferramentas...')
+  // Register tools
+  // Each tool becomes a "tool" in the MCP protocol, listable and callable
+  log('Registering tools...')
   registerWebSearchTool(server, config)
   registerWebSearchAdvancedTool(server, config)
   registerWebFetchTool(server, config)
-  log('Ferramentas registradas com sucesso')
+  log('Tools registered successfully')
 
-  // Registra um resource estático com a lista de tools
-  // Resources são dados que o servidor expõe para o cliente ler
+  // Register a static resource with the tool list
+  // Resources are data the server exposes for the client to read
   server.resource(
     'tools',
     'mcp-searxng-local://tools',
     {
-      description: 'Lista de ferramentas disponíveis no servidor',
+      description: 'List of tools available on the server',
       mimeType: 'application/json',
     },
     async () => ({
@@ -76,8 +76,8 @@ export function createServer(config: ServerConfig = {}): McpServer {
 }
 
 /**
- * Verifica se o SearXNG está acessível.
- * Chamado durante o startup para dar feedback ao usuário.
+ * Checks if SearXNG is accessible.
+ * Called during startup to provide user feedback.
  */
 export async function checkSearxngHealth(config: ServerConfig): Promise<boolean> {
   const client = createSearxngClient(config)

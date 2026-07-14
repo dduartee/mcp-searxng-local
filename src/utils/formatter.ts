@@ -1,7 +1,6 @@
 /**
  * formatter.ts
- * Formata os resultados brutos do SearXNG e conteúdo de páginas
- * em texto markdown para consumo via MCP.
+ * Formats raw SearXNG results and page content into markdown text for MCP consumption.
  */
 
 import type { SearxngResult, SearxngResponse } from '../types.js'
@@ -11,23 +10,23 @@ export function formatSearchResults(
   includeEngine?: boolean
 ): string {
   if (results.length === 0) {
-    return 'Nenhum resultado encontrado. Tente uma query diferente.'
+    return 'No results found. Try a different query.'
   }
 
   return results
     .map((r, i) => {
       const lines: string[] = [
-        `${i + 1}. **${r.title || '(sem título)'}**`,
+        `${i + 1}. **${r.title || '(untitled)'}**`,
         `   URL: ${r.url}`,
       ]
       if (includeEngine !== false) {
         lines.push(`   Engine: ${r.engine}`)
       }
       if (r.publishedDate) {
-        lines.push(`   Publicado: ${r.publishedDate}`)
+        lines.push(`   Published: ${r.publishedDate}`)
       }
       if (r.author) {
-        lines.push(`   Autor: ${r.author}`)
+        lines.push(`   Author: ${r.author}`)
       }
       if (r.content) {
         lines.push(`   ${r.content}`)
@@ -45,7 +44,7 @@ export function formatFullSearchResponse(response: SearxngResponse): string {
   const sections: string[] = []
 
   if (response.answers.length > 0) {
-    sections.push('## Respostas diretas\n')
+    sections.push('## Direct Answers\n')
     response.answers.forEach((a) => sections.push(`- ${a}`))
     sections.push('')
   }
@@ -54,32 +53,32 @@ export function formatFullSearchResponse(response: SearxngResponse): string {
     sections.push('## Infoboxes\n')
     response.infoboxes.forEach((ib) => {
       sections.push(`- **${ib.infobox}**: ${ib.content.slice(0, 300)}`)
-      if (ib.url) sections.push(`  Fonte: ${ib.url}`)
+      if (ib.url) sections.push(`  Source: ${ib.url}`)
     })
     sections.push('')
   }
 
   if (response.suggestions.length > 0) {
-    sections.push('## Sugestões de busca\n')
+    sections.push('## Search Suggestions\n')
     response.suggestions.forEach((s) => sections.push(`- ${s}`))
     sections.push('')
   }
 
   if (response.corrections.length > 0) {
-    sections.push('## Correções ortográficas\n')
+    sections.push('## Spelling Corrections\n')
     response.corrections.forEach((c) => sections.push(`- ${c}`))
     sections.push('')
   }
 
-  sections.push('## Resultados\n')
+  sections.push('## Results\n')
   sections.push(formatSearchResults(response.results))
 
   if (response.unresponsive_engines.length > 0) {
     sections.push('')
-    sections.push('## Engines indisponíveis\n')
+    sections.push('## Unresponsive Engines\n')
     response.unresponsive_engines.forEach((e) => {
       const name = Array.isArray(e) ? e[0] : e
-      const reason = Array.isArray(e) ? e[1] : 'desconhecido'
+      const reason = Array.isArray(e) ? e[1] : 'unknown'
       sections.push(`- **${name}**: ${reason}`)
     })
   }
@@ -88,8 +87,8 @@ export function formatFullSearchResponse(response: SearxngResponse): string {
 }
 
 /**
- * Extrai parágrafos relevantes de um texto baseado em palavras-chave.
- * Usa TF simples — conta quantas palavras da query aparecem em cada parágrafo.
+ * Extracts relevant paragraphs from text based on keyword matching.
+ * Uses simple TF — counts how many query words appear in each paragraph.
  */
 export function extractHighlights(text: string, query: string, maxChars = 800): string {
   const queryWords = query.toLowerCase().split(/\s+/).filter((w) => w.length > 2)
@@ -143,24 +142,24 @@ export function formatPageContent(
     if (highlights.length > 0) {
       const pct = text.length > 0 ? Math.round((1 - highlights.length / text.length) * 100) : 0
       content = highlights
-        + `\n\n> *Trechos relevantes (${highlights.length} de ${text.length} caracteres, ~${pct}% menor). Use mode=text para página completa.*`
+        + `\n\n> *Relevant excerpts (${highlights.length} of ${text.length} characters, ~${pct}% smaller). Use mode=text for full page.*`
     } else {
       content = maxChars && text.length > maxChars
-        ? text.slice(0, maxChars) + '\n\n[... conteúdo truncado ...]'
+        ? text.slice(0, maxChars) + '\n\n[... content truncated ...]'
         : text
     }
   } else {
     content = maxChars && text.length > maxChars
-      ? text.slice(0, maxChars) + '\n\n[... conteúdo truncado ...]'
+      ? text.slice(0, maxChars) + '\n\n[... content truncated ...]'
       : text
   }
 
   const lines: string[] = [
-    `# ${title || '(sem título)'}`,
-    `Fonte: ${url}`,
+    `# ${title || '(untitled)'}`,
+    `Source: ${url}`,
   ]
   if (description) {
-    lines.push(`Descrição: ${description}`)
+    lines.push(`Description: ${description}`)
   }
   lines.push('', content)
 

@@ -1,22 +1,22 @@
 /**
  * index.ts
- * Entry point do servidor MCP.
+ * MCP server entry point.
  *
- * Este arquivo:
- * 1. Lê configuração de variáveis de ambiente
- * 2. Cria o servidor MCP via createServer()
- * 3. Conecta ao transporte stdio (padrão MCP)
+ * This file:
+ * 1. Reads configuration from environment variables
+ * 2. Creates the MCP server via createServer()
+ * 3. Connects to the stdio transport (MCP default)
  *
- * Transporte stdio:
- *   O servidor lê JSON do stdin e escreve JSON no stdout.
- *   O Claude Code (ou qualquer cliente MCP) gerencia o processo
- *   e se comunica via pipe.
+ * stdio transport:
+ *   The server reads JSON from stdin and writes JSON to stdout.
+ *   Claude Code (or any MCP client) manages the process
+ *   and communicates via pipe.
  *
- * Para rodar:
- *   npm run dev    (desenvolvimento com hot reload)
- *   npm start      (produção)
+ * To run:
+ *   npm run dev    (development with hot reload)
+ *   npm start      (production)
  *
- * Para testar com MCP Inspector:
+ * To test with MCP Inspector:
  *   npm run inspector
  */
 
@@ -26,8 +26,8 @@ import type { ServerConfig } from './types.js'
 import { warn } from './utils/logger.js'
 
 /**
- * Lê configuração das variáveis de ambiente.
- * Suporta os prefixos SEARXNG_ e MCP_SEARCH_LOCAL_ para flexibilidade.
+ * Reads configuration from environment variables.
+ * Supports SEARXNG_ and MCP_SEARCH_LOCAL_ prefixes for flexibility.
  */
 function loadConfigFromEnv(): ServerConfig {
   return {
@@ -52,33 +52,33 @@ function loadConfigFromEnv(): ServerConfig {
 }
 
 /**
- * Função principal.
- * Inicializa tudo e conecta ao transporte.
+ * Main function.
+ * Initializes everything and connects to the transport.
  */
 async function main(): Promise<void> {
   const config = loadConfigFromEnv()
 
-  // Verifica se o SearXNG está rodando (não crítico — só avisa)
+  // Check if SearXNG is running (non-critical — just warns)
   const healthy = await checkSearxngHealth(config)
   if (!healthy) {
-    warn('⚠️  SearXNG não está respondendo em '
+    warn('⚠️  SearXNG is not responding at '
       + `http://${config.searxngHost}:${config.searxngPort}. `
-      + 'Execute "docker compose up -d" para iniciar.')
-    warn('O servidor MCP vai iniciar, mas web_search pode falhar até o SearXNG estar online.')
+      + 'Run "docker compose up -d" to start.')
+    warn('MCP server will start, but web_search may fail until SearXNG is online.')
   }
 
-  // Cria e configura o servidor
+  // Create and configure the server
   const server = createServer(config)
 
-  // Conecta ao transporte stdio
-  // O StdioServerTransport lê do stdin e escreve no stdout
-  // Segue o protocolo JSON-RPC do MCP
+  // Connect to the stdio transport
+  // StdioServerTransport reads from stdin and writes to stdout
+  // Follows the MCP JSON-RPC protocol
   const transport = new StdioServerTransport()
   await server.connect(transport)
 }
 
-// Inicia o servidor
-// Captura erros não tratados para dar mensagem amigável
+// Start the server
+// Catch unhandled errors for friendly message
 main().catch((err) => {
   console.error('[mcp-searxng-local] Fatal:', err)
   process.exit(1)

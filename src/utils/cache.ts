@@ -1,7 +1,7 @@
 /**
  * cache.ts
- * Cache LRU em memória com TTL.
- * Evita chamadas repetidas ao SearXNG para a mesma query.
+ * In-memory LRU cache with TTL.
+ * Prevents repeated SearXNG calls for the same query.
  */
 
 interface CacheEntry<T> {
@@ -26,14 +26,14 @@ export class MemoryCache<T> {
       return undefined
     }
 
-    // LRU: move para o final (mais recente)
+    // LRU: move to end (most recent)
     this.store.delete(key)
     this.store.set(key, entry)
     return entry.value
   }
 
   set(key: string, value: T, ttlMs: number): void {
-    // Evicta o mais antigo se cheio
+    // Evict oldest if full
     if (this.store.size >= this.maxSize) {
       const firstKey = this.store.keys().next().value
       if (firstKey !== undefined) {
