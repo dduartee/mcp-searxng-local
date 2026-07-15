@@ -1,82 +1,82 @@
 # Search Insights for AI Agents
 
-Lições aprendidas ao construir um MCP server de busca web e ao testá-lo com agentes de IA executando pesquisas reais.
+Lessons learned building an MCP web search server and testing it with AI agents running real searches.
 
-## O que agentes de IA realmente precisam
+## What AI Agents Actually Need
 
-### 1. Highlights, não páginas inteiras
+### 1. Highlights, Not Full Pages
 
-O insight mais importante: agentes de IA **não querem páginas completas**. Querem os trechos relevantes.
+The most important insight: AI agents **don't want full pages**. They want the relevant excerpts.
 
-Testamos isso com um subagente pesquisando distros Linux para gaming. Ele fez 15+ chamadas de `web_fetch`. Quando o modo `highlights` retornava a página inteira (bug que depois corrigimos), o agente desperdiçava tokens processando navegação, sidebars e rodapés. Após a correção — parágrafos extraídos por keyword matching — a redução foi de **98%** (341 caracteres de 15.197).
+We tested this with a subagent researching Linux distros for gaming. It made 15+ `web_fetch` calls. When `highlights` mode returned the full page (a bug we later fixed), the agent wasted tokens processing navigation, sidebars, and footers. After the fix — paragraphs extracted by keyword matching — the reduction was **98%** (341 characters out of 15,197).
 
-| Modo | Tokens típicos | Quando usar |
+| Mode | Typical Tokens | When to Use |
 |------|---------------|-------------|
-| `highlights` | ~300-800 chars | Busca factual, multi-step agents, scanning rápido |
-| `text` | ~3000-5000 chars | Análise profunda, pesquisa acadêmica, contexto completo |
+| `highlights` | ~300-800 chars | Factual search, multi-step agents, quick scanning |
+| `text` | ~3000-5000 chars | Deep analysis, academic research, full context |
 
-**Regra prática:** `mode=highlights` primeiro, `mode=text` só se necessário.
+**Rule of thumb:** `mode=highlights` first, `mode=text` only when necessary.
 
-### 2. Transparência sobre falhas
+### 2. Transparency About Failures
 
-Agentes precisam saber POR QUE algo falhou. Exemplo real:
+Agents need to know WHY something failed. Real example:
 
 ```
-# Antes (sem diagnóstico):
-Nenhum resultado encontrado.
+# Before (no diagnostics):
+No results found.
 
-# Depois (com diagnóstico):
-## Engines indisponíveis
+# After (with diagnostics):
+## Unresponsive Engines
 - duckduckgo: Suspended: access denied
 - brave: Suspended: too many requests
 ```
 
-Com o diagnóstico, o agente sabe que deve tentar `engines=google` em vez de `engines=duckduckgo`. Sem diagnóstico, ele assume que não há resultados e desiste.
+With diagnostics, the agent knows to try `engines=google` instead of `engines=duckduckgo`. Without diagnostics, it assumes there are no results and gives up.
 
-### 3. Filtros que funcionam de verdade
+### 3. Filters That Actually Work
 
-Testamos `startPublishedDate` com um agente pesquisando "iPXE secure boot". O filtro de data era client-side — resultados sem data passavam. O agente recebeu resultados de 2018 misturados com 2026. **Datas imprecisas são piores que datas ausentes** — o agente confia no filtro e toma decisões erradas.
+We tested `startPublishedDate` with an agent searching for "iPXE secure boot". The date filter was client-side — results without dates slipped through. The agent received results from 2018 mixed with 2026. **Imprecise dates are worse than missing dates** — the agent trusts the filter and makes wrong decisions.
 
-Corrigimos: resultados sem data são excluídos quando o filtro está ativo.
+Fix: results without dates are excluded when a date filter is active.
 
-### 4. Engine discovery é essencial
+### 4. Engine Discovery Is Essential
 
-O agente testou `engines=wikipedia` e recebeu 0 resultados. O motor existe no SearXNG mas não tinha índice para a query. O agente não tinha como saber se:
-- O engine está configurado mas vazio
-- O engine está bloqueado/indisponível
-- O nome do engine está errado
+The agent tried `engines=wikipedia` and got 0 results. The engine exists in SearXNG but had no index for the query. The agent had no way to know if:
+- The engine is configured but empty
+- The engine is blocked/unavailable
+- The engine name is wrong
 
-**Solução parcial:** expomos `unresponsive_engines` com o motivo. Mas ainda falta uma forma de listar engines disponíveis.
+**Partial solution:** we expose `unresponsive_engines` with the reason. But we still lack a way to list available engines.
 
-### 5. Duas tools de search confundem
+### 5. Two Search Tools Confuse Agents
 
-Tínhamos `web_search` e `web_search_advanced` com 80% de overlap de parâmetros. O agente não sabia qual usar. Unificamos — `web_search` agora tem todos os parâmetros, e `web_search_advanced` é um alias com o mesmo handler.
+We had `web_search` and `web_search_advanced` with 80% parameter overlap. The agent didn't know which to use. We unified them — `web_search` now has all parameters, and `web_search_advanced` is an alias with the same handler.
 
-### 6. Métricas de redução importam
+### 6. Reduction Metrics Matter
 
-Quando o highlights extrai trechos, o agente precisa saber **o quanto** foi reduzido. Adicionamos:
+When highlights extract excerpts, the agent needs to know **how much** was reduced. We added:
 
 ```
-> Trechos relevantes (341 de 15197 caracteres, ~98% menor).
+> Relevant excerpts (341 of 15197 characters, ~98% smaller).
 ```
 
-Isso permite ao agente decidir se precisa de `mode=text` para mais contexto.
+This lets the agent decide if it needs `mode=text` for more context.
 
-## O que NÃO implementamos (e por quê)
+## What We Didn't Implement (and Why)
 
-| Feature | Por que não |
-|---------|------------|
-| Structured output (`outputSchema`) | Requer LLM externo — fora do escopo zero-API-key |
-| Deep search / multi-step reasoning | Requer LLM externo |
-| Relevance scores por resultado | SearXNG não fornece scores nativos |
-| Server-side date filtering | SearXNG não suporta filtro de data exato |
+| Feature | Why Not |
+|---------|---------|
+| Structured output (`outputSchema`) | Requires external LLM — outside zero-API-key scope |
+| Deep search / multi-step reasoning | Requires external LLM |
+| Relevance scores per result | SearXNG doesn't provide native scores |
+| Server-side date filtering | SearXNG doesn't support exact date filters |
 
-## Padrões de uso observados
+## Observed Usage Patterns
 
-Analisando subagentes reais usando o MCP:
+Analyzing real subagents using the MCP:
 
-1. **Agentes fazem busca ampla primeiro**, depois refinam com filtros
-2. **Web_fetch é usado em ~40% dos resultados de busca** — o snippet do search geralmente basta
-3. **Domain filtering é o filtro mais usado** (excluir reddit/pinterest, incluir github/wikipedia)
-4. **Agentes raramente usam `pageno` > 1** — confiam nos primeiros 5-10 resultados
-5. **Queries tendem a ser longas e em linguagem natural** — o agente escreve como falaria com um humano
+1. **Agents search broadly first**, then refine with filters
+2. **`web_fetch` is used on ~40% of search results** — the search snippet is usually enough
+3. **Domain filtering is the most used filter** (exclude reddit/pinterest, include github/wikipedia)
+4. **Agents rarely use `pageno` > 1** — they trust the first 5-10 results
+5. **Queries tend to be long and natural language** — the agent writes as if talking to a human

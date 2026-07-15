@@ -1,57 +1,31 @@
-# Guia de Instalação
+# Install Guide
 
-Este guia cobre todos os modos de instalação do `mcp-searxng-local`, desde o setup local de desenvolvimento até a configuração global com automação.
+This guide covers all installation modes for `mcp-searxng-local`, from local development setup to global configuration with automation.
 
-## Modos de instalação
+## Installation Modes
 
-| Modo | Esforço | Ideal para |
-|------|---------|------------|
-| [Projeto local](#1-projeto-local) | Baixo | Desenvolvedores do próprio repo |
-| [Clone + path absoluto](#2-clone--path-absoluto) | Médio | Usar em qualquer projeto |
-| [Global com plugin](#3-global-com-plugin) | Alto | Experiência completa, sempre disponível |
-
----
-
-## 1. Projeto local
-
-Setup mínimo. O `opencode.json` do projeto carrega o MCP automaticamente.
-
-```bash
-git clone https://github.com/dduartee/mcp-searxng-local
-cd mcp-searxng-local
-npm install
-npm run build
-docker compose up -d
-```
-
-```json
-// opencode.json (já incluso no repo)
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "mcp-searxng-local": {
-      "type": "local",
-      "command": ["node", "dist/index.js"],
-      "enabled": true,
-      "env": {
-        "SEARXNG_HOST": "localhost",
-        "SEARXNG_PORT": "4000",
-        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
-      }
-    }
-  }
-}
-```
-
-**Prós:** Zero configuração, caminho relativo funciona.
-
-**Contras:** Só funciona dentro do diretório do projeto.
+| Mode | Effort | Best for |
+|------|--------|----------|
+| [Local project](#1-local-project) | Low | Contributors working on the repo itself |
+| [Clone + absolute path](#2-clone--absolute-path) | Medium | Using in any project |
+| [Global with plugin](#3-global-with-plugin) | High | Full experience, always available |
+| [Termux (Android)](#4-termux-android) | Medium | Running SearXNG natively without Docker |
 
 ---
 
-## 2. Clone + path absoluto
+## 1. Local Project
 
-Clone o repo em um local fixo e aponte o caminho absoluto. Funciona em qualquer projeto.
+Minimal setup. Follow the [Quick Start (Docker)](../README.md#option-a-docker-recommended) in the README, then the MCP config is already included in the repo's `opencode.json`.
+
+**Pros:** Zero configuration, relative path works.
+
+**Cons:** Only works inside the project directory.
+
+---
+
+## 2. Clone + Absolute Path
+
+Clone the repo to a fixed location and point to the absolute path. Works in any project.
 
 ```bash
 git clone https://github.com/dduartee/mcp-searxng-local ~/mcp-searxng-local
@@ -60,7 +34,7 @@ npm install && npm run build
 docker compose up -d
 ```
 
-```json
+```jsonc
 // ~/.config/opencode/opencode.json (global)
 {
   "$schema": "https://opencode.ai/config.json",
@@ -79,32 +53,32 @@ docker compose up -d
 }
 ```
 
-Ou via CLI:
+Or via CLI:
 
 ```bash
 opencode mcp add mcp-searxng-local -- node /home/user/mcp-searxng-local/dist/index.js
 ```
 
-**Prós:** Disponível em qualquer projeto. Um clone, usa sempre.
+**Pros:** Available in any project. One clone, use everywhere.
 
-**Contras:** Precisa atualizar manualmente (`git pull && npm run build`). Path absoluto obrigatório.
+**Cons:** Requires manual updates (`git pull && npm run build`). Absolute path required.
 
 ---
 
-## 3. Global com plugin
+## 3. Global with Plugin
 
-Inspirado no [mind MCP](https://github.com/anomalyco/mind). Três camadas que trabalham juntas:
+Inspired by [mind MCP](https://github.com/anomalyco/mind). Three layers working together:
 
 ```
 ~/.config/opencode/
 ├── opencode.json           ← MCP server config
 ├── plugins/
-│   └── searxng-startup.js  ← Plugin: inicia SearXNG no boot
+│   └── searxng-startup.js  ← Plugin: starts SearXNG on boot
 └── instructions/
-    └── searxng-search.md   ← Regras: quando usar cada tool
+    └── searxng-search.md   ← Rules: when to use each tool
 ```
 
-### 3.1 Config do MCP (`opencode.json`)
+### 3.1 MCP Config (`opencode.json`)
 
 ```json
 {
@@ -124,9 +98,9 @@ Inspirado no [mind MCP](https://github.com/anomalyco/mind). Três camadas que tr
 }
 ```
 
-### 3.2 Plugin de startup (`~/.config/opencode/plugins/searxng-startup.js`)
+### 3.2 Startup Plugin (`~/.config/opencode/plugins/searxng-startup.js`)
 
-Garante que o SearXNG está rodando antes do MCP server iniciar:
+Copy from [examples/opencode-plugin/searxng-startup.js](../examples/opencode-plugin/searxng-startup.js) to ensure SearXNG is running before the MCP server starts:
 
 ```js
 import { execSync } from 'node:child_process'
@@ -146,29 +120,31 @@ export default async () => {
 }
 ```
 
-### 3.3 Instruções de uso (`~/.config/opencode/instructions/searxng-search.md`)
+### 3.3 Usage Instructions (`~/.config/opencode/instructions/searxng-search.md`)
+
+Copy from [examples/opencode-instructions/searxng-search.md](../examples/opencode-instructions/searxng-search.md) to define when to use each tool:
 
 ```markdown
 # SearXNG Search Protocol
 
-Use estas ferramentas para qualquer pesquisa na web:
+Use these tools for any web search:
 
-## web_search — busca geral
-Use para pesquisas factuais, notícias, documentação.
-- Prefira `engines=google` para resultados gerais
-- Use `includeDomains=["wikipedia.org"]` para fontes enciclopédicas
-- Use `categories=news` para notícias recentes
+## web_search — general search
+Use for factual queries, news, documentation.
+- Prefer `engines=google` for general results
+- Use `includeDomains=["wikipedia.org"]` for encyclopedic sources
+- Use `categories=news` for recent news
 
-## web_fetch — extrair conteúdo
-Use APÓS o web_search para ler páginas completas.
-- Prefira `mode=highlights` com a mesma query da busca (~98% tokens menores)
-- Use `mode=text` apenas quando precisar do conteúdo completo
+## web_fetch — extract content
+Use AFTER web_search to read full pages.
+- Prefer `mode=highlights` with the same search query (~98% fewer tokens)
+- Use `mode=text` only when you need the full content
 
-## web_search_advanced — filtros precisos
-Use quando precisar de date range, filtro de domínio, ou combinação de filtros.
+## web_search_advanced — precise filters
+Use when you need date range, domain filtering, or combined filters.
 ```
 
-Registre as instruções no `opencode.json`:
+Register the instructions in `opencode.json`:
 
 ```json
 {
@@ -178,38 +154,85 @@ Registre as instruções no `opencode.json`:
 }
 ```
 
-**Prós:** Experiência completa. SearXNG inicia sozinho. Agente sabe quando usar cada tool.
+**Pros:** Full experience. SearXNG starts automatically. Agent knows when to use each tool.
 
-**Contras:** Mais arquivos para manter. Plugin requer Node.js.
+**Cons:** More files to maintain. Plugin requires Node.js.
 
 ---
 
-## Atualização
+## 4. Termux (Android)
+
+SearXNG runs natively on Termux without Docker. Ideal for using opencode on Android.
+
+### 4.1 Install SearXNG
+
+Follow the [Termux Install Guide](install-searxng-termux.md) for the full walkthrough (dependencies, SearXNG install, configuration, start/stop scripts).
+
+### 4.2 Configure MCP
+
+```jsonc
+// ~/.config/opencode/opencode.json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "mcp-searxng-local": {
+      "type": "local",
+      "command": ["node", "/data/data/com.termux/files/home/mcp-searxng-local/dist/index.js"],
+      "enabled": true,
+      "env": {
+        "SEARXNG_HOST": "localhost",
+        "SEARXNG_PORT": "4000"
+      }
+    }
+  }
+}
+```
+
+> Replace the path above with your actual clone location.
+
+**Pros:** No Docker. Runs on any Android with Termux. Same port (4000) as Docker.
+
+**Cons:** SearXNG must be started manually (or via script). Some engines (brave/startpage) may be blocked on mobile IPs.
+
+## Updating
+
+### Docker
 
 ```bash
 cd ~/mcp-searxng-local
 git pull
 npm install && npm run build
-docker compose pull   # atualiza imagens SearXNG + Valkey
-docker compose up -d  # reinicia com novas imagens
+docker compose pull   # updates SearXNG + Valkey images
+docker compose up -d  # restarts with new images
 ```
 
-Após atualizar, reinicie o OpenCode.
+### Termux
+
+```bash
+cd ~/mcp-searxng-local
+git pull
+npm install && npm run build
+
+# Update SearXNG
+cd ~/searxng-src
+git pull
+source ~/searxng-pyenv/bin/activate
+pip install --use-pep517 --no-build-isolation -e .
+
+# Restart
+~/mcp-searxng-local/stop-searxng.sh
+~/mcp-searxng-local/start-searxng.sh
+```
+
+After updating, restart OpenCode.
 
 ## Troubleshooting
 
-| Sintoma | Causa provável | Solução |
-|---------|---------------|---------|
-| Tools não aparecem | Caminho errado no config | Verifique se `dist/index.js` existe no path absoluto |
-| `web_search` retorna erro de conexão | SearXNG não está rodando | `docker compose up -d` no diretório do projeto |
-| `## Engines indisponíveis` com `brave: too many requests` | Engine bloqueado/rate-limited | **Fallback automático cuida disso** — nenhuma ação necessária |
-| Todos os engines retornam 0 resultados + todos indisponíveis | IP do servidor bloqueado | Defina `SEARXNG_FALLBACK_URLS` com instâncias públicas — fallback retry automático |
-| Highlights retorna página inteira | Página tem parágrafos curtos ou única seção | Use `mode=text` com `maxChars` menor |
-| Timeout no web_fetch | Página lenta ou bloqueando bots | Aumente o `SEARXNG_TIMEOUT` via env var |
+See [Troubleshooting](../README.md#troubleshooting) in the README.
 
-## Publicação futura no npm
+## Future: npm Publication
 
-Quando publicado, o setup será reduzido a:
+When published, setup will be reduced to:
 
 ```json
 {
@@ -228,4 +251,4 @@ Quando publicado, o setup será reduzido a:
 }
 ```
 
-O `npx -y` baixa e executa automaticamente. Sem clone, sem build manual.
+`npx -y` downloads and runs automatically. No clone, no manual build.

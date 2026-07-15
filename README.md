@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
-[![tests](https://img.shields.io/badge/tests-28%20passed-brightgreen)]()
+[![tests](https://img.shields.io/badge/tests-28%20passed-brightgreen)](https://github.com/dduartee/mcp-searxng-local/actions)
 
 MCP server for web search via [SearXNG](https://docs.searxng.org/) — **zero API keys, zero cost, 100% local**.
 
@@ -27,9 +27,14 @@ Pre-configured in `opencode.json` with 3 public instances. Works out of the box 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org) >= 20
-- [Docker](https://docs.docker.com/get-docker/) + Docker Compose v2
+- One of:
+  - [Docker](https://docs.docker.com/get-docker/) + Docker Compose v2 (recommended)
+  - Python 3.10+ on [Termux](https://termux.dev) (Android, no Docker needed)
+    - Install opencode: see [opencode-termux](https://github.com/guysoft/opencode-termux) for pre-built binaries
 
 ## Quick Start
+
+### Option A: Docker (recommended)
 
 ```bash
 git clone https://github.com/dduartee/mcp-searxng-local
@@ -44,6 +49,23 @@ curl -s "http://localhost:4000/search?q=test&format=json" | python3 -c "import s
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/index.js
 # Expected: {"jsonrpc":"2.0","id":1,"result":{"tools":[...]}}
 ```
+
+### Option B: Termux (Android, no Docker)
+
+Install SearXNG natively — no Docker required. See [Termux Install Guide](docs/install-searxng-termux.md).
+
+```bash
+git clone https://github.com/dduartee/mcp-searxng-local ~/mcp-searxng-local
+cd ~/mcp-searxng-local
+npm install && npm run build
+
+# Install SearXNG natively (see full guide)
+pkg install -y libxslt binutils
+# ... full steps in the guide ...
+./start-searxng.sh
+```
+
+> To install opencode itself on Termux, see [opencode-termux](https://github.com/guysoft/opencode-termux).
 
 Then add to your MCP client config below. **Restart your client** for the tools to appear.
 
@@ -96,6 +118,8 @@ Response includes: results + **direct answers**, **infoboxes**, **spelling sugge
 
 After adding the config, **restart your MCP client** for the tools to appear.
 
+> Replace `/home/user/mcp-searxng-local` with your actual clone path.
+
 ### OpenCode
 
 ```bash
@@ -118,8 +142,7 @@ opencode mcp add mcp-searxng-local -- node /home/user/mcp-searxng-local/dist/ind
   "mcpServers": {
     "mcp-searxng-local": {
       "command": "node",
-      "args": ["/home/user/mcp-searxng-local/dist/index.js"],
-      "env": { "SEARXNG_HOST": "localhost", "SEARXNG_PORT": "4000" }
+      "args": ["/home/user/mcp-searxng-local/dist/index.js"]
     }
   }
 }
@@ -129,14 +152,69 @@ opencode mcp add mcp-searxng-local -- node /home/user/mcp-searxng-local/dist/ind
 
 ```json
 // .cursor/mcp.json
-{ "mcpServers": { "mcp-searxng-local": { "command": "node", "args": ["/home/user/mcp-searxng-local/dist/index.js"] } } }
+{
+  "mcpServers": {
+    "mcp-searxng-local": {
+      "command": "node",
+      "args": ["/home/user/mcp-searxng-local/dist/index.js"]
+    }
+  }
+}
 ```
 
-### VS Code · Windsurf · Zed · Codex · Antigravity
+### VS Code
+
+```json
+// .vscode/mcp.json
+{
+  "servers": {
+    "mcp-searxng-local": {
+      "command": "node",
+      "args": ["/home/user/mcp-searxng-local/dist/index.js"]
+    }
+  }
+}
+```
+
+### Windsurf
+
+```json
+// ~/.windsurf/mcp.json
+{
+  "mcpServers": {
+    "mcp-searxng-local": {
+      "command": "node",
+      "args": ["/home/user/mcp-searxng-local/dist/index.js"]
+    }
+  }
+}
+```
+
+### Zed
+
+```json
+// settings.json → "context_servers"
+{
+  "context_servers": {
+    "mcp-searxng-local": {
+      "command": "node",
+      "args": ["/home/user/mcp-searxng-local/dist/index.js"]
+    }
+  }
+}
+```
+
+### Codex / Antigravity
 
 See [Install Guide](docs/INSTALL.md) for all client configs.
 
+### Termux (Android)
+
+See [Install Guide — Termux](docs/INSTALL.md#4-termux-android) for MCP config and [Termux Install Guide](docs/install-searxng-termux.md) for full SearXNG setup.
+
 ## Configuration
+
+All env vars are optional — defaults work for local SearXNG on port 4000.
 
 | Env var | Default | Description |
 |---------|---------|-------------|
@@ -153,12 +231,14 @@ Also accepts `MCP_SEARCH_LOCAL_` prefix: `MCP_SEARCH_LOCAL_SEARXNG_HOST`, `MCP_S
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | Tools don't appear | Path wrong or build missing | Run `npm run build`, verify `dist/index.js` exists |
-| `web_search` connection error | SearXNG not running | `docker compose up -d` |
+| `web_search` connection error | SearXNG not running | Docker: `docker compose up -d`. Termux: `./start-searxng.sh` |
 | `## Unresponsive Engines` with `brave: too many requests` | Engine blocked/rate-limited | **Auto-fallback handles this** — no action needed. Add `SEARXNG_FALLBACK_URLS` for more options |
 | All engines return 0 results + all unresponsive | Server IP blocked by search providers | Set `SEARXNG_FALLBACK_URLS` to public instances. Fallback retries automatically |
 | Fallback returns 0 results too | Public instances also blocked or down | Try different instances in `SEARXNG_FALLBACK_URLS`, or wait and retry later |
 | Highlights returns full page | Page has no paragraph breaks or all text matches query | Use `mode=text` with smaller `maxChars` |
 | `web_fetch` timeout (15s) | Page is slow or .js-heavy SPA | Reduce `maxChars`, try a different URL |
+| Termux: `bilibili: can't register` | Timezone data missing | `pip install tzdata` in the SearXNG venv |
+| Termux: server dies after a few seconds | Process not detached from shell | Use `setsid` (handled by `start-searxng.sh`) |
 
 ## Testing
 
@@ -179,7 +259,7 @@ MCP Client (OpenCode, Claude Code, Cursor...)
 mcp-searxng-local (Node.js + TypeScript)
   │ HTTP + LRU cache + exponential backoff retry
   ▼
-SearXNG (Docker) ← Google, DuckDuckGo, Brave, Wikipedia, arXiv
+SearXNG (Docker or Termux native) ← Google, DDG, Brave, Wikipedia, arXiv
   │ if all engines unresponsive → auto-fallback
   ▼
 Public SearXNG instances (search.rhscz.eu, searx.tiekoetter.com, ...)
@@ -190,6 +270,7 @@ Public SearXNG instances (search.rhscz.eu, searx.tiekoetter.com, ...)
 | Doc | Description |
 |-----|-------------|
 | [Install Guide](docs/INSTALL.md) | Project, global, and plugin-based setup |
+| [Termux Install](docs/install-searxng-termux.md) | SearXNG native install on Android/Termux |
 | [Examples](docs/EXAMPLES.md) | Real agent workflows and CLI usage |
 | [Architecture](docs/ARCHITECTURE.md) | Internal design, data flow, decisions |
 | [Search Insights](docs/SEARCH_INSIGHTS.md) | What AI agents actually need from search |
