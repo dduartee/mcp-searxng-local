@@ -20,6 +20,7 @@
  *   npm run inspector
  */
 
+import 'dotenv/config'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { createServer, checkSearxngHealth } from './server.js'
 import type { ServerConfig } from './types.js'

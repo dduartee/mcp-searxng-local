@@ -46,7 +46,8 @@ docker compose up -d
       "env": {
         "SEARXNG_HOST": "localhost",
         "SEARXNG_PORT": "4000",
-        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
+        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website",
+        "GITHUB_TOKEN": ""
       }
     }
   }
@@ -63,11 +64,22 @@ opencode mcp add mcp-searxng-local -- node /home/user/mcp-searxng-local/dist/ind
 
 **Cons:** Requires manual updates (`git pull && npm run build`). Absolute path required.
 
+### `.env` file
+
+Instead of passing env vars through MCP config, you can create a `.env` file in the project root. It is loaded automatically via `dotenv`:
+
+```bash
+# ~/mcp-searxng-local/.env
+SEARXNG_HOST=localhost
+SEARXNG_PORT=4000
+GITHUB_TOKEN=ghp_xxxxxxxxxxxx
+```
+
 ---
 
 ## 3. Global with Plugin
 
-Inspired by [mind MCP](https://github.com/anomalyco/mind). Three layers working together:
+Three layers working together:
 
 ```
 ~/.config/opencode/
@@ -91,7 +103,8 @@ Inspired by [mind MCP](https://github.com/anomalyco/mind). Three layers working 
       "env": {
         "SEARXNG_HOST": "localhost",
         "SEARXNG_PORT": "4000",
-        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
+        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website",
+        "GITHUB_TOKEN": ""
       }
     }
   }
@@ -244,7 +257,8 @@ When published, setup will be reduced to:
       "env": {
         "SEARXNG_HOST": "localhost",
         "SEARXNG_PORT": "4000",
-        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website"
+        "SEARXNG_FALLBACK_URLS": "https://search.rhscz.eu,https://searx.tiekoetter.com,https://searxng.website",
+        "GITHUB_TOKEN": ""
       }
     }
   }

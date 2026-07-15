@@ -18,6 +18,7 @@
 import * as cheerio from 'cheerio'
 import { FetchError } from '../utils/errors.js'
 import { withRetry } from '../utils/retry.js'
+import { fetchGithubUrl } from './github.js'
 
 export interface ExtractedContent {
   title: string
@@ -41,6 +42,11 @@ export async function extractFromUrl(
     throw new FetchError('URL must start with http:// or https://', url)
   }
 
+  // Optimized GitHub fetching (raw content, API)
+  const githubResult = await fetchGithubUrl(url, signal)
+  if (githubResult) return githubResult
+
+  // Generic HTML fetch
   let response: Response
   try {
     response = await withRetry(

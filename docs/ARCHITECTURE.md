@@ -2,6 +2,8 @@
 
 ## Request flow
 
+### web_search / web_search_advanced
+
 ```
 MCP Client (OpenCode / Claude Code)
   │ JSON-RPC via stdio
@@ -29,6 +31,27 @@ src/utils/formatter.ts ──────────────── formatte
 MCP Response ────────────────────────── { content: [{ type: "text", text: "..." }] }
 ```
 
+### web_fetch
+
+```
+MCP Client
+  │
+  ▼
+src/tools/webFetch.ts ──────────────── validates params, calls fetch
+  │ extractFromUrl(url, signal)
+  ▼
+src/engines/fetchHtml.ts ───────────── GitHub detection
+  │
+  ├─ GitHub URL? ─→ src/engines/github.ts
+  │                  ├─ /blob, /raw → raw.githubusercontent.com
+  │                  └─ repo root   → api.github.com (30min cache)
+  │
+  └─ Otherwise ──→ Generic fetch + cheerio (HTML → clean text)
+                    │ withRetry(2x), 15s timeout
+                    ▼
+                  ExtractedContent { title, description, text }
+```
+
 ## Directory structure
 
 ```
@@ -43,7 +66,8 @@ src/
 │   └── webFetch.ts         # web_fetch (text + highlights)
 ├── engines/
 │   ├── searxng.ts          # SearXNG HTTP client (cache + retry + auto-fallback)
-│   └── fetchHtml.ts        # Fetch + cheerio (HTML → clean text)
+│   ├── fetchHtml.ts        # Fetch + cheerio (HTML → clean text)
+│   └── github.ts           # Optimized GitHub fetch (raw content, API metadata)
 └── utils/
     ├── formatter.ts        # Markdown formatting + extractHighlights
     ├── errors.ts           # Error classes + MCP formatter
@@ -75,6 +99,18 @@ Connections to SearXNG and page fetches use `withRetry()` with:
 
 We use Zod v3 (compatible with MCP SDK v1). Schemas are described with `.describe()` — the LLM reads these descriptions to understand when and how to use each parameter.
 
+### GitHub URL optimization
+
+`web_fetch` has a special path for GitHub URLs in `src/engines/github.ts`. Before attempting a generic HTML fetch, `extractFromUrl` checks whether the URL is a GitHub URL and routes it to an optimized handler:
+
+- **Blob/raw URLs** (`/blob/...`, `/raw/...`) → `raw.githubusercontent.com` — returns clean file content directly, bypassing cheerio HTML parsing entirely. This is much faster and produces ~99% less noise than scraping the rendered GitHub page.
+- **Repo root URLs** (`github.com/user/repo`) → GitHub REST API (`api.github.com/repos/:owner/:repo`) — returns enriched response: structured metadata (stars, forks, language, license, topics, open issues, default branch) + file tree + README, fetched via 3 parallel API calls.
+- **Other GitHub paths** (`/issues`, `/pulls`, etc.) → falls back to generic HTML fetch (no degradation in behavior).
+
+Caching uses a separate `MemoryCache` instance with 30-minute TTL, distinct from the 5-minute SearXNG cache, because GitHub metadata (stars, forks) changes less frequently than search results.
+
+This optimization is transparent to the caller — `web_fetch` handles GitHub URLs the same way as any other URL, just with better results and lower latency.
+
 ### Rate limit handling & auto-fallback
 
 Search engines frequently block server IPs with CAPTCHAs or rate limits. The server handles this transparently:
@@ -97,8 +133,9 @@ All responses are formatted as markdown. The LLM consumes markdown natively and 
 
 ## Tests
 
-28 unit tests with vitest covering:
-- `formatter.test.ts` — highlights, full response, domain filtering
-- `errors.test.ts` — error classes, MCP formatter
-- `retry.test.ts` — retry behavior and fallback
-- `logger.test.ts` — debug on/off
+48 unit tests with vitest covering:
+- `formatter.test.ts` — highlights, full response, domain filtering (12 tests)
+- `errors.test.ts` — error classes, MCP formatter (8 tests)
+- `retry.test.ts` — retry behavior and fallback (4 tests)
+- `logger.test.ts` — debug on/off (4 tests)
+- `github.test.ts` — URL parsing, raw content fetch, repo metadata fetch, fallback logic (20 tests)

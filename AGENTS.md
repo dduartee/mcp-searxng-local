@@ -12,15 +12,16 @@ MCP server for local web search via SearXNG — zero API keys, zero cost, 100% l
 - **Validation:** Zod v3
 - **HTTP:** axios (SearXNG API), native fetch (web_fetch)
 - **HTML parsing:** cheerio
-- **Tests:** vitest (28 tests)
+- **Tests:** vitest (48 tests)
 - **Backend:** SearXNG (Docker) + Valkey (cache)
+- **Env loading:** dotenv (`.env` files auto-loaded in entry points)
 
 ## Build & Test
 
 ```bash
 npm run build        # tsc → dist/
 npm run typecheck    # tsc --noEmit
-npx vitest run       # 28 tests
+npx vitest run       # 48 tests
 npm run dev          # tsx watch (development)
 npm start            # node dist/index.js (production)
 ```
@@ -41,14 +42,15 @@ src/
 │   └── webFetch.ts       # web_fetch (text + highlights modes)
 ├── engines/
 │   ├── searxng.ts        # SearXNG HTTP client (cache + retry)
-│   └── fetchHtml.ts      # HTML fetch + cheerio extraction
+│   ├── fetchHtml.ts      # HTML fetch + cheerio extraction
+│   └── github.ts         # GitHub URL optimization (raw content, API metadata)
 ├── utils/
 │   ├── formatter.ts      # Markdown formatting + highlight extraction
 │   ├── errors.ts         # Error classes + MCP error response formatter
 │   ├── logger.ts         # Conditional logging (debug on/off)
 │   ├── retry.ts          # Exponential backoff + jitter
 │   └── cache.ts          # In-memory LRU cache with TTL
-└── __tests__/            # vitest unit tests (4 files, 28 tests)
+└── __tests__/            # vitest unit tests (5 files, 48 tests)
 ```
 
 ## Key Architecture Decisions
@@ -79,6 +81,9 @@ src/
 - **Auto-fallback:** When all engines are unresponsive, the server automatically retries against public SearXNG instances (`SEARXNG_FALLBACK_URLS`). No manual intervention needed.
 - Highlights mode (`web_fetch`) uses keyword matching — ~98% token reduction vs full page.
 - Date filtering (`startPublishedDate`/`endPublishedDate`) is client-side. Undated results are excluded when date filter is active.
+- **GitHub optimization:** `web_fetch` detects GitHub URLs and routes to optimized endpoints: raw.githubusercontent.com for files, api.github.com for repo metadata. Separate cache (30min TTL).
+- **Enriched repo root:** `web_fetch` on `github.com/{owner}/{repo}` returns metadata + file tree + README in one call (3 parallel API requests).
+- **GITHUB_TOKEN:** Optional. When set, GitHub API requests are authenticated (5000 req/h vs 60 unauthenticated). Falls back to generic HTML on 403.
 
 ## Files That Changed Recently
 
@@ -87,3 +92,5 @@ See git log for context. Key files:
 - `src/utils/formatter.ts` — all output formatting lives here
 - `src/utils/errors.ts` — centralized error handling
 - `searxng/settings.yml` — SearXNG configuration (recently fixed `privacy:` key)
+- `src/engines/github.ts` — GitHub URL optimization (raw content + API metadata)
+- `src/engines/fetchHtml.ts` — GitHub pre-check in `extractFromUrl`

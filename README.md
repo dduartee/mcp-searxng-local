@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
-[![tests](https://img.shields.io/badge/tests-28%20passed-brightgreen)](https://github.com/dduartee/mcp-searxng-local/actions)
+[![tests](https://img.shields.io/badge/tests-48%20passed-brightgreen)](https://github.com/dduartee/mcp-searxng-local/actions)
 
 MCP server for web search via [SearXNG](https://docs.searxng.org/) — **zero API keys, zero cost, 100% local**.
 
@@ -80,6 +80,7 @@ Then add to your MCP client config below. **Restart your client** for the tools 
 | Privacy | Cloud (USA) | Cloud | **100% local** |
 | Engines | Proprietary index | Brave only | **Google, DDG, Brave, Wikipedia, arXiv** |
 | Highlights | AI (paid) | No | **Keyword matching (free)** |
+| GitHub fetch | Generic HTML | Generic HTML | **Optimized: raw content + API metadata** |
 | Cache | Server-side | No | **LRU local (5min TTL)** |
 
 ## Tools
@@ -113,6 +114,19 @@ Response includes: results + **direct answers**, **infoboxes**, **spelling sugge
 | `query` | string | — | Required for `highlights` mode |
 
 **Highlights tip:** Results are typically ~98% smaller than full page text. Use `mode=highlights` with the same query that led you to the URL.
+
+### GitHub URL optimization
+
+When `web_fetch` detects a GitHub URL, it bypasses HTML parsing and uses optimized endpoints:
+
+| GitHub URL pattern | Route | Result |
+|---|---|---|
+| `github.com/user/repo` | GitHub API (`api.github.com`) | Enriched response: metadata + file tree + README (3 parallel API calls) |
+| `github.com/user/repo/blob/...` | `raw.githubusercontent.com` | Clean raw file content (no HTML) |
+| `github.com/user/repo/raw/...` | `raw.githubusercontent.com` | Same — already raw |
+| `/issues`, `/pulls`, etc. | Falls back to generic HTML fetch | Normal web_fetch behavior |
+
+**Benefits:** Blob/raw URLs return ~99% less noise vs HTML parsing. Repo root URLs fetch metadata, file tree, and README in parallel — structured data that is hard to extract from rendered HTML. GitHub API responses are cached with a 30-minute TTL.
 
 ## Setup
 
@@ -222,9 +236,21 @@ All env vars are optional — defaults work for local SearXNG on port 4000.
 | `SEARXNG_PORT` | `4000` | SearXNG port |
 | `SEARXNG_TIMEOUT` | `10000` | HTTP timeout (ms) |
 | `SEARXNG_FALLBACK_URLS` | — | Comma-separated public SearXNG URLs (auto-retry when local engines are rate-limited or blocked) |
+| `GITHUB_TOKEN` | — | GitHub personal access token — raises API rate limit from 60 to 5000 req/h. When set, GitHub repo root fetches use authenticated API; falls back to generic HTML on 403 |
 | `DEBUG` | `false` | Enable verbose logging |
 
 Also accepts `MCP_SEARCH_LOCAL_` prefix: `MCP_SEARCH_LOCAL_SEARXNG_HOST`, `MCP_SEARCH_LOCAL_SEARXNG_PORT`, `MCP_SEARCH_LOCAL_TIMEOUT`, `MCP_SEARCH_LOCAL_DEBUG`.
+
+### `.env` support
+
+The server loads environment variables from a `.env` file automatically (via `dotenv`). Create a `.env` file in the project root:
+
+```bash
+SEARXNG_HOST=localhost
+SEARXNG_PORT=4000
+GITHUB_TOKEN=ghp_xxxxxxxxxxxx
+DEBUG=false
+```
 
 ## Troubleshooting
 
@@ -246,7 +272,7 @@ Also accepts `MCP_SEARCH_LOCAL_` prefix: `MCP_SEARCH_LOCAL_SEARXNG_HOST`, `MCP_S
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | node dist/index.js
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"web_search","arguments":{"query":"test"}}}' | node dist/index.js
 
-npm test             # 28 unit tests
+npm test             # 48 unit tests
 npm run inspector    # MCP Inspector UI
 ```
 
@@ -275,6 +301,8 @@ Public SearXNG instances (search.rhscz.eu, searx.tiekoetter.com, ...)
 | [Architecture](docs/ARCHITECTURE.md) | Internal design, data flow, decisions |
 | [Search Insights](docs/SEARCH_INSIGHTS.md) | What AI agents actually need from search |
 | [Comparison](docs/COMPARISON.md) | vs Exa, Brave, SearXNG raw, Chrome DevTools |
+| [GitHub Fetch](docs/GITHUB_FETCH.md) | Optimized GitHub URL handling in web_fetch |
+| [CI](.github/workflows/ci.yml) | GitHub Actions: build + test on push/PR |
 
 ## License
 
