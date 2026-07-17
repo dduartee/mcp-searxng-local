@@ -30,27 +30,18 @@ npm start            # node dist/index.js (production)
 
 ## Project Structure
 
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full directory tree with descriptions.
+
 ```
 src/
-├── index.ts              # Entry point (stdio transport)
-├── http.ts               # Entry point (Streamable HTTP transport)
+├── index.ts              # Entry point (stdio)
+├── http.ts               # Entry point (Streamable HTTP)
 ├── server.ts             # McpServer factory + tool registration
-├── toolRegistry.ts       # Tool metadata (id, name, description)
-├── types.ts              # Shared interfaces (SearxngResponse, WebSearchParams, etc.)
-├── tools/
-│   ├── webSearch.ts      # web_search + web_search_advanced (unified handler)
-│   └── webFetch.ts       # web_fetch (text + highlights modes)
-├── engines/
-│   ├── searxng.ts        # SearXNG HTTP client (cache + retry)
-│   ├── fetchHtml.ts      # HTML fetch + cheerio extraction
-│   └── github.ts         # GitHub URL optimization (raw content, API metadata)
-├── utils/
-│   ├── formatter.ts      # Markdown formatting + highlight extraction
-│   ├── errors.ts         # Error classes + MCP error response formatter
-│   ├── logger.ts         # Conditional logging (debug on/off)
-│   ├── retry.ts          # Exponential backoff + jitter
-│   └── cache.ts          # In-memory LRU cache with TTL
-└── __tests__/            # vitest unit tests (5 files, 48 tests)
+├── types.ts              # Shared interfaces
+├── tools/                # webSearch.ts, webFetch.ts
+├── engines/              # searxng.ts, fetchHtml.ts, github.ts
+├── utils/                # formatter.ts, errors.ts, retry.ts, cache.ts, logger.ts
+└── __tests__/            # vitest (48 tests)
 ```
 
 ## Key Architecture Decisions
@@ -62,6 +53,8 @@ src/
 - **Cache:** LRU in-memory (100 entries, 5min TTL). SearXNG also caches via Valkey.
 - **Retry:** `withRetry()` with exponential backoff + jitter. 3 retries for SearXNG, 2 for web_fetch.
 - **Rate limit handling:** Auto-fallback to public SearXNG instances when all local engines are unresponsive. Configured via `SEARXNG_FALLBACK_URLS` env var.
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed design decisions.
 
 ## Conventions
 
@@ -81,8 +74,7 @@ src/
 - **Auto-fallback:** When all engines are unresponsive, the server automatically retries against public SearXNG instances (`SEARXNG_FALLBACK_URLS`). No manual intervention needed.
 - Highlights mode (`web_fetch`) uses keyword matching — ~98% token reduction vs full page.
 - Date filtering (`startPublishedDate`/`endPublishedDate`) is client-side. Undated results are excluded when date filter is active.
-- **GitHub optimization:** `web_fetch` detects GitHub URLs and routes to optimized endpoints: raw.githubusercontent.com for files, api.github.com for repo metadata. Separate cache (30min TTL).
-- **Enriched repo root:** `web_fetch` on `github.com/{owner}/{repo}` returns metadata + file tree + README in one call (3 parallel API requests).
+- **GitHub optimization:** `web_fetch` detects GitHub URLs and routes to optimized endpoints. See [docs/GITHUB_FETCH.md](docs/GITHUB_FETCH.md).
 - **GITHUB_TOKEN:** Optional. When set, GitHub API requests are authenticated (5000 req/h vs 60 unauthenticated). Falls back to generic HTML on 403.
 
 ## Files That Changed Recently

@@ -1,9 +1,5 @@
 # Install Guide
 
-This guide covers all installation modes for `mcp-searxng-local`, from local development setup to global configuration with automation.
-
-## Installation Modes
-
 | Mode | Effort | Best for |
 |------|--------|----------|
 | [Local project](#1-local-project) | Low | Contributors working on the repo itself |
@@ -15,7 +11,7 @@ This guide covers all installation modes for `mcp-searxng-local`, from local dev
 
 ## 1. Local Project
 
-Minimal setup. Follow the [Quick Start (Docker)](../README.md#option-a-docker-recommended) in the README, then the MCP config is already included in the repo's `opencode.json`.
+Minimal setup. Follow the [Quick Start](../README.md#quick-start) in the README, then the MCP config is already included in the repo's `opencode.json`.
 
 **Pros:** Zero configuration, relative path works.
 
@@ -66,10 +62,9 @@ opencode mcp add mcp-searxng-local -- node /home/user/mcp-searxng-local/dist/ind
 
 ### `.env` file
 
-Instead of passing env vars through MCP config, you can create a `.env` file in the project root. It is loaded automatically via `dotenv`:
+Instead of passing env vars through MCP config, create a `.env` file in the project root. Loaded automatically via `dotenv`:
 
 ```bash
-# ~/mcp-searxng-local/.env
 SEARXNG_HOST=localhost
 SEARXNG_PORT=4000
 GITHUB_TOKEN=ghp_xxxxxxxxxxxx
@@ -135,27 +130,7 @@ export default async () => {
 
 ### 3.3 Usage Instructions (`~/.config/opencode/instructions/searxng-search.md`)
 
-Copy from [examples/opencode-instructions/searxng-search.md](../examples/opencode-instructions/searxng-search.md) to define when to use each tool:
-
-```markdown
-# SearXNG Search Protocol
-
-Use these tools for any web search:
-
-## web_search — general search
-Use for factual queries, news, documentation.
-- Prefer `engines=google` for general results
-- Use `includeDomains=["wikipedia.org"]` for encyclopedic sources
-- Use `categories=news` for recent news
-
-## web_fetch — extract content
-Use AFTER web_search to read full pages.
-- Prefer `mode=highlights` with the same search query (~98% fewer tokens)
-- Use `mode=text` only when you need the full content
-
-## web_search_advanced — precise filters
-Use when you need date range, domain filtering, or combined filters.
-```
+Copy from [examples/opencode-instructions/searxng-search.md](../examples/opencode-instructions/searxng-search.md) to define when to use each tool.
 
 Register the instructions in `opencode.json`:
 
@@ -175,33 +150,7 @@ Register the instructions in `opencode.json`:
 
 ## 4. Termux (Android)
 
-SearXNG runs natively on Termux without Docker. Ideal for using opencode on Android.
-
-### 4.1 Install SearXNG
-
-Follow the [Termux Install Guide](install-searxng-termux.md) for the full walkthrough (dependencies, SearXNG install, configuration, start/stop scripts).
-
-### 4.2 Configure MCP
-
-```jsonc
-// ~/.config/opencode/opencode.json
-{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "mcp-searxng-local": {
-      "type": "local",
-      "command": ["node", "/data/data/com.termux/files/home/mcp-searxng-local/dist/index.js"],
-      "enabled": true,
-      "env": {
-        "SEARXNG_HOST": "localhost",
-        "SEARXNG_PORT": "4000"
-      }
-    }
-  }
-}
-```
-
-> Replace the path above with your actual clone location.
+SearXNG runs natively on Termux without Docker. See the [Termux Install Guide](install-searxng-termux.md) for the full walkthrough: dependencies, SearXNG install, configuration, start/stop scripts, MCP config, and troubleshooting.
 
 **Pros:** No Docker. Runs on any Android with Termux. Same port (4000) as Docker.
 
@@ -221,21 +170,7 @@ docker compose up -d  # restarts with new images
 
 ### Termux
 
-```bash
-cd ~/mcp-searxng-local
-git pull
-npm install && npm run build
-
-# Update SearXNG
-cd ~/searxng-src
-git pull
-source ~/searxng-pyenv/bin/activate
-pip install --use-pep517 --no-build-isolation -e .
-
-# Restart
-~/mcp-searxng-local/stop-searxng.sh
-~/mcp-searxng-local/start-searxng.sh
-```
+See the [Termux Install Guide — Updating](install-searxng-termux.md#updating).
 
 After updating, restart OpenCode.
 
